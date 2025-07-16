@@ -9,7 +9,7 @@ const Products = ({ addToCart }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('https://industrious-flexibility.up.railway.app/api/products');
+        const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products');
         const data = await res.json();
         setProducts(data);
       } catch (err) {

@@ -36,7 +36,7 @@ const PostProduct = ({ show, onClose }) => {
     };
 
     try {
-      const res = await fetch('https://industrious-flexibility.up.railway.app/api/products', {
+      const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
