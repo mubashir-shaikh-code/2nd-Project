@@ -3,9 +3,14 @@ import { FaUser, FaAt, FaLock } from 'react-icons/fa';
 import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
 
+// ✅ Redux
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../Redux/Slices/AuthSlice';
+
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // ✅ Init redux dispatcher
 
   const [formData, setFormData] = useState({
     username: '',
@@ -56,10 +61,14 @@ const Login = () => {
         if (!isSignIn) {
           setIsSignIn(true); // switch to sign-in
         } else {
-          // ✅ Store user & token in localStorage
+          // ✅ Dispatch user/token to Redux store
+          dispatch(loginSuccess({ user: data.user, token: data.token }));
+
+          // Optional: Store in localStorage for persistence after refresh
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('token', data.token);
 
+          // Navigate to home page
           navigate('/home');
         }
       }

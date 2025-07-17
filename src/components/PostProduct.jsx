@@ -1,6 +1,9 @@
+// src/components/PostProduct.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {FaPen ,FaDollarSign ,FaImage ,FaTags} from 'react-icons/fa';
+import { FaPen, FaDollarSign, FaImage, FaTags } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
+import { postProduct } from '../Redux/Slices/ProductSlice';
 import bgImage from '../assets/hero.jpg';
 
 const PostProduct = ({ show, onClose }) => {
@@ -11,6 +14,7 @@ const PostProduct = ({ show, onClose }) => {
     category: 'Electronics',
   });
 
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
@@ -19,16 +23,22 @@ const PostProduct = ({ show, onClose }) => {
     const { name, value, files } = e.target;
     if (name === 'image') {
       const reader = new FileReader();
-      reader.onloadend = () => setFormData({ ...formData, image: reader.result });
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, image: reader.result }));
+      };
       if (files[0]) reader.readAsDataURL(files[0]);
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user || !token) return alert('Please log in to post a product.');
+
+    if (!user || !token) {
+      alert('Please log in to post a product.');
+      return;
+    }
 
     const payload = {
       ...formData,
@@ -36,24 +46,12 @@ const PostProduct = ({ show, onClose }) => {
     };
 
     try {
-      const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) return alert(data.error || 'Post failed');
-
-      alert('Product posted successfully');
+      await dispatch(postProduct({ payload, token })).unwrap();
+      alert('Product posted successfully!');
       onClose();
       navigate('/products');
-    } catch (err) {
-      console.error(err);
-      alert('Server error');
+    } catch (error) {
+      alert(error.message || 'Product post failed.');
     }
   };
 
@@ -72,8 +70,6 @@ const PostProduct = ({ show, onClose }) => {
         <h2 className="text-2xl font-bold mb-4 text-center text-black">Post a Product</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Description */}
           <div className="flex items-center bg-white/80 p-3 rounded-md">
             <FaPen className="text-gray-500 mr-2" />
             <textarea
@@ -85,7 +81,6 @@ const PostProduct = ({ show, onClose }) => {
             />
           </div>
 
-          {/* Price */}
           <div className="flex items-center bg-white/80 p-3 rounded-md">
             <FaDollarSign className="text-gray-500 mr-2" />
             <input
@@ -98,7 +93,6 @@ const PostProduct = ({ show, onClose }) => {
             />
           </div>
 
-          {/* Image */}
           <div className="flex items-center bg-white/80 p-3 rounded-md">
             <FaImage className="text-gray-500 mr-2" />
             <input
@@ -111,14 +105,12 @@ const PostProduct = ({ show, onClose }) => {
             />
           </div>
 
-          {/* Category */}
           <div className="flex items-center bg-white/80 p-3 rounded-md">
             <FaTags className="text-gray-500 mr-2" />
             <select
               name="category"
               value={formData.category}
               onChange={handleChange}
-              placeholder="Select Category"
               required
               className="bg-transparent flex-1 outline-none"
             >
