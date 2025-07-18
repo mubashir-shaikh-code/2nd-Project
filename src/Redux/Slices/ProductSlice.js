@@ -9,15 +9,25 @@ export const fetchProducts = createAsyncThunk('products/fetchProducts', async ()
 });
 
 // Async thunk to post a product
-export const postProduct = createAsyncThunk('products/postProduct', async (product) => {
+export const postProduct = createAsyncThunk('products/postProduct', async ({ payload, token }) => {
   const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(product),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`, // Add this if your backend requires auth
+    },
+    body: JSON.stringify(payload), // ✅ send only payload, not full object
   });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Failed to post product');
+  }
+
   const data = await res.json();
   return data;
 });
+
 
 const productSlice = createSlice({
   name: 'products',
