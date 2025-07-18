@@ -18,7 +18,7 @@ const App = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
 
   // Calculate total item count for cart icon
-  const totalCartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const sup = useSelector((state) => state.cart.sup);
 
   // Function to add item to cart
   const handleAddToCart = (item) => {
@@ -27,7 +27,7 @@ const App = () => {
 
   return (
     <>
-      {location.pathname !== '/' && <Navbar cartCount={totalCartCount} />}
+      {location.pathname !== '/' && <Navbar sup={sup} />}
 
       <Routes>
         <Route path="/" element={<Login />} />
