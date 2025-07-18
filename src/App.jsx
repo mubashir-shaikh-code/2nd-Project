@@ -1,7 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { addToCart as addToCartAction, clearCart } from './Redux/Slice/CartSlice'; // ✅ Renamed import
-
+import { addToCart, clearCart } from './Redux/Slices/CartSlice';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -13,19 +12,22 @@ import Products from './components/Products';
 
 const App = () => {
   const location = useLocation();
-
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.cartItems);
-  const sup = useSelector((state) => state.cart.sup);
 
-  // ✅ Avoid naming conflict
+  // Get cart items from Redux
+  const cartItems = useSelector((state) => state.cart.cartItems);
+
+  // Calculate total item count for cart icon
+  const totalCartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  // Function to add item to cart
   const handleAddToCart = (item) => {
-    dispatch(addToCartAction(item));
+    dispatch(addToCart(item));
   };
 
   return (
     <>
-      {location.pathname !== '/' && <Navbar sup={sup} />}
+      {location.pathname !== '/' && <Navbar cartCount={totalCartCount} />}
 
       <Routes>
         <Route path="/" element={<Login />} />
@@ -35,12 +37,7 @@ const App = () => {
         <Route path="/products" element={<Products addToCart={handleAddToCart} />} />
         <Route
           path="/cart"
-          element={
-            <Cart
-              cartItems={cartItems}
-              clear={() => dispatch(clearCart())}
-            />
-          }
+          element={<Cart cartItems={cartItems} clear={() => dispatch(clearCart())} />}
         />
       </Routes>
 
