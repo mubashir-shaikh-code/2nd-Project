@@ -20,10 +20,13 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
+  // Filter only approved products
   const filteredProducts = products.filter((p) => {
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-    const matchesSearch = p.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const isApproved = p.isApproved === true;
+    const matchesCategory =
+      selectedCategory === 'All' || p.category === selectedCategory;
+    const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    return isApproved && matchesCategory && matchesSearch;
   });
 
   return (
@@ -62,7 +65,7 @@ const Products = () => {
       ) : error ? (
         <p className="text-center text-red-600">{error}</p>
       ) : filteredProducts.length === 0 ? (
-        <p className="text-center text-gray-600">No products found.</p>
+        <p className="text-center text-gray-600">No approved products found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredProducts.map((item, i) => (
@@ -72,12 +75,12 @@ const Products = () => {
             >
               <img
                 src={item.image}
-                alt={item.description}
+                alt={item.description || 'Product Image'}
                 className="h-40 object-cover mb-4 rounded"
               />
-              <p className="font-semibold">{item.description}</p>
-              <p className="text-gray-500 mb-2">Category: {item.category}</p>
-              <p className="text-lg font-bold">${item.price}</p>
+              <p className="font-semibold">{item.description || 'No description'}</p>
+              <p className="text-gray-500 mb-2">Category: {item.category || 'N/A'}</p>
+              <p className="text-lg font-bold">${item.price ?? 'N/A'}</p>
               <button
                 onClick={() => handleAddToCart(item)}
                 className="mt-3 bg-black text-white px-4 py-1 rounded hover:bg-gray-800"

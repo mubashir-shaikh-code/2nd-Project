@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { FaUser, FaAt, FaLock } from 'react-icons/fa';
 import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
-
-// ✅ Redux
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
+
+const ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_PASSWORD = 'admin123';
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(false);
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // ✅ Init redux dispatcher
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -27,9 +28,7 @@ const Login = () => {
       reader.onloadend = () => {
         setFormData({ ...formData, profilePic: reader.result });
       };
-      if (file) {
-        reader.readAsDataURL(file);
-      }
+      if (file) reader.readAsDataURL(file);
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -38,18 +37,32 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ✅ Admin Login Check (client-side)
+    if (
+      isSignIn &&
+      formData.email === ADMIN_EMAIL &&
+      formData.password === ADMIN_PASSWORD
+    ) {
+      alert('Admin login successful!');
+      localStorage.setItem('isAdmin', true);
+      navigate('/admin');
+      return;
+    }
+
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
-
       const bodyData = isSignIn
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const res = await fetch(`https://2nd-project-backend-production.up.railway.app${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyData),
-      });
+      const res = await fetch(
+        `https://2nd-project-backend-production.up.railway.app${endpoint}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData),
+        }
+      );
 
       const data = await res.json();
 
@@ -59,21 +72,17 @@ const Login = () => {
         alert(data.message || 'Success');
 
         if (!isSignIn) {
-          setIsSignIn(true); // switch to sign-in
+          setIsSignIn(true); // go to login page
         } else {
-          // ✅ Dispatch user/token to Redux store
           dispatch(loginSuccess({ user: data.user, token: data.token }));
-
-          // Optional: Store in localStorage for persistence after refresh
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('token', data.token);
-
-          // Navigate to home page
+          localStorage.setItem('isAdmin', false);
           navigate('/home');
         }
       }
     } catch (error) {
-      console.error('Request failed', error);
+      console.error('Login failed', error);
       alert('Server error');
     }
   };
@@ -112,7 +121,6 @@ const Login = () => {
 
               <div className="flex items-center bg-gray-100 p-3 rounded-md">
                 <input
-                
                   type="file"
                   name="profilePic"
                   accept="image/*"
