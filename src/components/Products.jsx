@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../Redux/Slices/ProductSlice';
-import { addToCart } from '../Redux/Slices/CartSlice'; // ✅ Import the Redux action
+import { addToCart } from '../Redux/Slices/CartSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
+
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
@@ -15,18 +17,31 @@ const Products = () => {
   }, [dispatch]);
 
   const handleAddToCart = (item) => {
-    dispatch(addToCart(item)); // ✅ Dispatch directly here
+    dispatch(addToCart(item));
   };
 
-  const filteredProducts =
-    selectedCategory === 'All'
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    const matchesSearch = p.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4">
       <h1 className="text-4xl font-bold text-center mb-6">Products</h1>
 
+      {/* Search Input */}
+      <div className="flex justify-center mb-6">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border px-4 py-2 rounded w-full max-w-md shadow"
+        />
+      </div>
+
+      {/* Category Buttons */}
       <div className="flex justify-center gap-4 mb-8 flex-wrap">
         {categories.map((cat) => (
           <button
@@ -41,6 +56,7 @@ const Products = () => {
         ))}
       </div>
 
+      {/* Product List */}
       {loading ? (
         <p className="text-center text-gray-600">Loading...</p>
       ) : error ? (
