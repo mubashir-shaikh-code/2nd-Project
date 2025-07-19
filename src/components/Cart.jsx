@@ -22,13 +22,6 @@ const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
     }
   };
 
-  const remove = (index) => {
-    const updated = [...cartItems];
-    updated.splice(index, 1);
-    setCartItems(updated);
-    setSup((prev) => prev - 1);
-  };
-
   const total = () => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
@@ -71,13 +64,7 @@ const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
                 </button>
               </div>
 
-              {/* Remove Button */}
-              <button
-                onClick={() => remove(index)}
-                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm cursor-pointer"
-              >
-                Remove
-              </button>
+              
             </div>
           ))}
 

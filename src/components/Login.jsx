@@ -112,6 +112,7 @@ const Login = () => {
 
               <div className="flex items-center bg-gray-100 p-3 rounded-md">
                 <input
+                
                   type="file"
                   name="profilePic"
                   accept="image/*"
