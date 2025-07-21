@@ -9,7 +9,6 @@ import Footer from './components/Footer';
 import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
-import AdminPanel from './components/AdminPanel';
 
 const App = () => {
   const location = useLocation();
@@ -32,7 +31,6 @@ const App = () => {
 
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

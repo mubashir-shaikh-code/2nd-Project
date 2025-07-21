@@ -5,9 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
 
-const ADMIN_EMAIL = 'admin@example.com';
-const ADMIN_PASSWORD = 'admin123';
-
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(false);
   const navigate = useNavigate();
@@ -37,18 +34,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Admin Login Check (client-side)
-    if (
-      isSignIn &&
-      formData.email === ADMIN_EMAIL &&
-      formData.password === ADMIN_PASSWORD
-    ) {
-      alert('Admin login successful!');
-      localStorage.setItem('isAdmin', true);
-      navigate('/admin');
-      return;
-    }
-
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
       const bodyData = isSignIn
@@ -72,12 +57,11 @@ const Login = () => {
         alert(data.message || 'Success');
 
         if (!isSignIn) {
-          setIsSignIn(true); // go to login page
+          setIsSignIn(true); // Switch to login form
         } else {
           dispatch(loginSuccess({ user: data.user, token: data.token }));
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('token', data.token);
-          localStorage.setItem('isAdmin', false);
           navigate('/home');
         }
       }
@@ -173,7 +157,7 @@ const Login = () => {
             onClick={() => setIsSignIn(!isSignIn)}
             className="text-black font-semibold mt-1 cursor-pointer"
           >
-            {isSignIn ? 'Go to Sign Up ' : 'Go to Sign In'}
+            {isSignIn ? 'Go to Sign Up' : 'Go to Sign In'}
           </button>
         </div>
       </div>

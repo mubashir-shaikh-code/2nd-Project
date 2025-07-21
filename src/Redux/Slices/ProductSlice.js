@@ -1,70 +1,53 @@
-// src/Redux/Slices/ProductSlice.js
+// Redux/Slices/productSlice.js
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// Async thunk to fetch products
+// ✅ Async Thunks
 export const fetchProducts = createAsyncThunk('products/fetchProducts', async () => {
-  const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products');
+  const res = await fetch('http://localhost:5000/api/products');
   const data = await res.json();
   return data;
 });
 
-// Async thunk to post a product
 export const postProduct = createAsyncThunk('products/postProduct', async ({ payload, token }) => {
-  const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
+  const res = await fetch('http://localhost:5000/api/products', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`, // Add this if your backend requires auth
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(payload), // ✅ send only payload, not full object
+    body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Failed to post product');
-  }
-
   const data = await res.json();
   return data;
 });
-
 
 const productSlice = createSlice({
   name: 'products',
   initialState: {
-    products: [],
-    loading: false,
+    allProducts: [],
+    status: 'idle',
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch products
+      // Fetch Products
       .addCase(fetchProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.status = 'loading';
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = action.payload;
+        state.status = 'succeeded';
+        state.allProducts = action.payload;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.error.message;
       })
 
-      // Post product
-      .addCase(postProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      // Post Product
       .addCase(postProduct.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products.push(action.payload); // add new product to list
-      })
-      .addCase(postProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.allProducts.push(action.payload);
       });
   },
 });
