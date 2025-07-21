@@ -15,23 +15,27 @@ const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
+  // Redux state
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
+  // Auth
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
   const isLoggedIn = !!user || isAdmin;
 
+  // Add to cart handler
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
   };
 
   return (
     <>
-      {location.pathname !== '/' && <Navbar sup={sup} />}
+      {/* Show Navbar only if not on login page */}
+      {location.pathname !== '/' && !isAdmin && <Navbar sup={sup} />}
 
       <Routes>
-        {/* Public Login Route */}
+        {/* Login route - show login only if not logged in */}
         <Route
           path="/"
           element={
@@ -43,13 +47,13 @@ const App = () => {
           }
         />
 
-        {/* Admin Protected Route */}
+        {/* Admin Route */}
         <Route
           path="/admin"
           element={isAdmin ? <AdminPanel /> : <Navigate to="/" />}
         />
 
-        {/* User Protected Routes */}
+        {/* Regular User Routes */}
         <Route
           path="/home"
           element={isLoggedIn && !isAdmin ? <Home /> : <Navigate to="/" />}
@@ -84,7 +88,8 @@ const App = () => {
         />
       </Routes>
 
-      {location.pathname !== '/' && <Footer />}
+      {/* Show Footer only if not on login page */}
+      {location.pathname !== '/' && !isAdmin && <Footer />}
     </>
   );
 };

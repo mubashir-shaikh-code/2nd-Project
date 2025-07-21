@@ -9,7 +9,7 @@ const ADMIN_EMAIL = 'admin@liflow.com';
 const ADMIN_PASS = 'admin123';
 
 const Login = () => {
-  const [isSignIn, setIsSignIn] = useState(false);
+  const [isSignIn, setIsSignIn] = useState(true); // default to login
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -39,7 +39,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Admin login shortcut
+    // ✅ Handle admin login directly
     if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASS) {
       const adminUser = {
         username: 'Admin',
@@ -51,10 +51,12 @@ const Login = () => {
       dispatch(loginSuccess({ user: adminUser, token: 'admin-token' }));
       localStorage.setItem('user', JSON.stringify(adminUser));
       localStorage.setItem('token', 'admin-token');
+      localStorage.setItem('isAdmin', 'true');
       navigate('/admin');
       return;
     }
 
+    // ✅ Handle user login or registration via API
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
       const body = isSignIn
@@ -79,19 +81,18 @@ const Login = () => {
       alert(data.message || (isSignIn ? 'Login successful' : 'Registration successful'));
 
       if (!isSignIn) {
-        setIsSignIn(true);
+        setIsSignIn(true); // go to login after signup
         return;
       }
 
-      const user = { ...data.user };
-      const isAdmin = user.email === ADMIN_EMAIL;
-      user.isAdmin = isAdmin;
-
+      const user = { ...data.user, isAdmin: false }; // ensure not admin
       dispatch(loginSuccess({ user, token: data.token }));
+
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
+      localStorage.setItem('isAdmin', 'false');
 
-      navigate(isAdmin ? '/admin' : '/home');
+      navigate('/home');
     } catch (err) {
       console.error('Login error:', err);
       alert('Server error');

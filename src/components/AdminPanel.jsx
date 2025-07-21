@@ -25,11 +25,13 @@ const AdminPanel = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/products');
+      const res = await axios.get(
+        'https://2nd-project-backend-production.up.railway.app/api/products'
+      );
       const data = res.data;
 
-      setPendingProducts(data.filter(p => p.status === 'pending'));
-      setApprovedProducts(data.filter(p => p.status === 'approved'));
+      setPendingProducts(data.filter((p) => p.status === 'pending'));
+      setApprovedProducts(data.filter((p) => p.status === 'approved'));
     } catch (error) {
       console.error('Error fetching products:', error);
     }
@@ -37,26 +39,51 @@ const AdminPanel = () => {
 
   const approveProduct = async (id) => {
     try {
-      await axios.put(`https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`, null, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`, // In case you implement JWT later
-        },
-      });
-      fetchProducts(); // Refresh
+      await axios.put(
+        `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      fetchProducts();
     } catch (err) {
       console.error('Error approving product:', err);
     }
   };
 
+  const rejectProduct = async (id) => {
+    try {
+      await axios.patch(
+        `https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      fetchProducts();
+    } catch (err) {
+      console.error('Error rejecting product:', err);
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('isAdmin');
     navigate('/login');
   };
 
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
-    if (!isAdmin) navigate('/login');
+    if (isAdmin !== 'true') {
+      navigate('/login');
+      return;
+    }
     fetchProducts();
   }, [navigate]);
 
@@ -66,19 +93,37 @@ const AdminPanel = () => {
         <Typography>No products available.</Typography>
       ) : (
         products.map((product) => (
-          <Box key={product._id} sx={{ border: '1px solid #ccc', mb: 2, p: 2, borderRadius: 2 }}>
+          <Box
+            key={product._id}
+            sx={{
+              border: '1px solid #ccc',
+              mb: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: '#fff',
+            }}
+          >
             <Typography variant="h6">{product.name}</Typography>
             <Typography>Category: {product.category}</Typography>
             <Typography>Description: {product.description}</Typography>
+
             {isPending && (
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => approveProduct(product._id)}
-                sx={{ mt: 1 }}
-              >
-                Approve
-              </Button>
+              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => approveProduct(product._id)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => rejectProduct(product._id)}
+                >
+                  Reject
+                </Button>
+              </Box>
             )}
           </Box>
         ))
@@ -106,11 +151,19 @@ const AdminPanel = () => {
           Admin Panel
         </Typography>
         <List>
-          <ListItem button selected={selectedTab === 'pending'} onClick={() => setSelectedTab('pending')}>
+          <ListItem
+            button
+            selected={selectedTab === 'pending'}
+            onClick={() => setSelectedTab('pending')}
+          >
             <PendingActionsIcon sx={{ mr: 1 }} />
             <ListItemText primary="Pending Products" />
           </ListItem>
-          <ListItem button selected={selectedTab === 'approved'} onClick={() => setSelectedTab('approved')}>
+          <ListItem
+            button
+            selected={selectedTab === 'approved'}
+            onClick={() => setSelectedTab('approved')}
+          >
             <CheckCircleIcon sx={{ mr: 1 }} />
             <ListItemText primary="Approved Products" />
           </ListItem>
