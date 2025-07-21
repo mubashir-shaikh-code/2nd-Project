@@ -5,7 +5,7 @@ import { addToCart } from '../Redux/Slices/CartSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
-  const { products, loading, error } = useSelector((state) => state.products);
+  const { products = [], loading, error } = useSelector((state) => state.products || {});
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,14 +20,14 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
-  // Filter only approved products
-  const filteredProducts = products.filter((p) => {
-    const isApproved = p.isApproved === true;
-    const matchesCategory =
-      selectedCategory === 'All' || p.category === selectedCategory;
-    const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return isApproved && matchesCategory && matchesSearch;
-  });
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((p) => {
+        const matchesCategory =
+          selectedCategory === 'All' || p.category === selectedCategory;
+        const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+      })
+    : [];
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4">
@@ -65,7 +65,7 @@ const Products = () => {
       ) : error ? (
         <p className="text-center text-red-600">{error}</p>
       ) : filteredProducts.length === 0 ? (
-        <p className="text-center text-gray-600">No approved products found.</p>
+        <p className="text-center text-gray-600">No products found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredProducts.map((item, i) => (
