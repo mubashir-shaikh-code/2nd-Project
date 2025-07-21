@@ -5,7 +5,7 @@ import { addToCart } from '../Redux/Slices/CartSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
-  const { products = [], loading, error } = useSelector((state) => state.products || {});
+  const { allProducts = [], status, error } = useSelector((state) => state.products || {});
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,14 +20,15 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
-  const filteredProducts = Array.isArray(products)
-    ? products.filter((p) => {
-        const matchesCategory =
-          selectedCategory === 'All' || p.category === selectedCategory;
-        const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesCategory && matchesSearch;
-      })
-    : [];
+  const filteredProducts = Array.isArray(allProducts)
+  ? allProducts.filter((p) => {
+      const matchesCategory =
+        selectedCategory === 'All' || p.category === selectedCategory;
+      const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+  : [];
+
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4">
@@ -60,13 +61,14 @@ const Products = () => {
       </div>
 
       {/* Product List */}
-      {loading ? (
-        <p className="text-center text-gray-600">Loading...</p>
-      ) : error ? (
-        <p className="text-center text-red-600">{error}</p>
-      ) : filteredProducts.length === 0 ? (
-        <p className="text-center text-gray-600">No products found.</p>
-      ) : (
+     {status === 'loading' ? (
+  <p className="text-center text-gray-600">Loading...</p>
+        ) : error ? (
+          <p className="text-center text-red-600">{error}</p>
+        ) : filteredProducts.length === 0 ? (
+          <p className="text-center text-gray-600">No products found.</p>
+        ) : (
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredProducts.map((item, i) => (
             <div

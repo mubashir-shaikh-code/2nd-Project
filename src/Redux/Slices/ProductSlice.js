@@ -1,26 +1,28 @@
-// Redux/Slices/productSlice.js
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// ✅ Correct route: fetch all products
 export const fetchProducts = createAsyncThunk('products/fetchProducts', async () => {
   const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products');
-  const data = await res.json();
-  return data;
+  if (!res.ok) throw new Error('Failed to fetch products');
+  return await res.json();
 });
 
-export const postProduct = createAsyncThunk('products/postProduct', async ({ productData, token }) => {
-  const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(productData),
-  });
-  const data = await res.json();
-  return data;
-});
+export const postProduct = createAsyncThunk(
+  'products/postProduct',
+  async ({ payload, token }) => {
+    const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Product post failed');
+    return data.product;
+  }
+);
 
 const productSlice = createSlice({
   name: 'products',
@@ -45,7 +47,7 @@ const productSlice = createSlice({
       })
 
       .addCase(postProduct.fulfilled, (state, action) => {
-        state.allProducts.push(action.payload);
+        state.allProducts.unshift(action.payload);
       });
   },
 });
