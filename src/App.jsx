@@ -19,23 +19,26 @@ const App = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
-  // Auth
+  // Get auth info from localStorage
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
-  const isLoggedIn = !!user || isAdmin;
+  const isLoggedIn = !!user;
 
-  // Add to cart handler
+  // Debug logs (optional)
+  console.log("isLoggedIn:", isLoggedIn, "| isAdmin:", isAdmin);
+
+  // Handle add to cart
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
   };
 
   return (
     <>
-      {/* Show Navbar only if not on login page */}
+      {/* Show Navbar only on logged-in user pages */}
       {location.pathname !== '/' && !isAdmin && <Navbar sup={sup} />}
 
       <Routes>
-        {/* Login route - show login only if not logged in */}
+        {/* Login route */}
         <Route
           path="/"
           element={
@@ -47,13 +50,13 @@ const App = () => {
           }
         />
 
-        {/* Admin Route */}
+        {/* Admin Panel */}
         <Route
           path="/admin"
           element={isAdmin ? <AdminPanel /> : <Navigate to="/" />}
         />
 
-        {/* Regular User Routes */}
+        {/* User Routes */}
         <Route
           path="/home"
           element={isLoggedIn && !isAdmin ? <Home /> : <Navigate to="/" />}
@@ -88,7 +91,7 @@ const App = () => {
         />
       </Routes>
 
-      {/* Show Footer only if not on login page */}
+      {/* Show footer if not on login or admin */}
       {location.pathname !== '/' && !isAdmin && <Footer />}
     </>
   );
