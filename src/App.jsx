@@ -1,5 +1,7 @@
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
@@ -15,26 +17,29 @@ const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // Redux state
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
-  // Get auth info from localStorage
+  // Clear localStorage on first load
+  useEffect(() => {
+    if (!sessionStorage.getItem('visited')) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAdmin');
+      sessionStorage.setItem('visited', 'true'); // Prevent loop
+    }
+  }, []);
+
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
   const isLoggedIn = !!user;
 
-  // Debug logs (optional)
-  console.log("isLoggedIn:", isLoggedIn, "| isAdmin:", isAdmin);
-
-  // Handle add to cart
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
   };
 
   return (
     <>
-      {/* Show Navbar only on logged-in user pages */}
+      {/* Show Navbar only if not on login and not admin */}
       {location.pathname !== '/' && !isAdmin && <Navbar sup={sup} />}
 
       <Routes>
@@ -50,13 +55,13 @@ const App = () => {
           }
         />
 
-        {/* Admin Panel */}
+        {/* Admin panel */}
         <Route
           path="/admin"
-          element={isAdmin ? <AdminPanel /> : <Navigate to="/" />}
+          element={isLoggedIn && isAdmin ? <AdminPanel /> : <Navigate to="/" />}
         />
 
-        {/* User Routes */}
+        {/* User-only routes */}
         <Route
           path="/home"
           element={isLoggedIn && !isAdmin ? <Home /> : <Navigate to="/" />}
@@ -91,7 +96,7 @@ const App = () => {
         />
       </Routes>
 
-      {/* Show footer if not on login or admin */}
+      {/* Footer only if not on login or admin */}
       {location.pathname !== '/' && !isAdmin && <Footer />}
     </>
   );
