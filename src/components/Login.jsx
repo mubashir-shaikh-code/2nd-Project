@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
 
+const ADMIN_EMAIL = 'admin@liflow.com';
+const ADMIN_PASS = 'admin123';
+
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(false);
   const navigate = useNavigate();
@@ -20,14 +23,16 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'profilePic') {
-      const file = files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, profilePic: reader.result });
-      };
-      if (file) reader.readAsDataURL(file);
+      const file = files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData((prev) => ({ ...prev, profilePic: reader.result }));
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -35,13 +40,10 @@ const Login = () => {
     e.preventDefault();
 
     // Admin login shortcut
-    if (
-      formData.email === 'admin@liflow.com' &&
-      formData.password === 'admin123'
-    ) {
+    if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASS) {
       const adminUser = {
         username: 'Admin',
-        email: 'admin@liflow.com',
+        email: ADMIN_EMAIL,
         profilePic: null,
         isAdmin: true,
       };
@@ -55,7 +57,7 @@ const Login = () => {
 
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
-      const bodyData = isSignIn
+      const body = isSignIn
         ? { email: formData.email, password: formData.password }
         : formData;
 
@@ -64,41 +66,34 @@ const Login = () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bodyData),
+          body: JSON.stringify(body),
         }
       );
 
       const data = await res.json();
-
       if (!res.ok) {
         alert(data.error || 'Something went wrong');
         return;
       }
 
-      alert(data.message || 'Success');
+      alert(data.message || (isSignIn ? 'Login successful' : 'Registration successful'));
 
       if (!isSignIn) {
-        setIsSignIn(true); // Switch to login form
-      } else {
-        const isAdmin = data.user?.email === 'admin@liflow.com';
-
-        dispatch(
-          loginSuccess({
-            user: { ...data.user, isAdmin },
-            token: data.token,
-          })
-        );
-
-        localStorage.setItem(
-          'user',
-          JSON.stringify({ ...data.user, isAdmin })
-        );
-        localStorage.setItem('token', data.token);
-
-        navigate(isAdmin ? '/admin' : '/home');
+        setIsSignIn(true);
+        return;
       }
-    } catch (error) {
-      console.error('Login failed', error);
+
+      const user = { ...data.user };
+      const isAdmin = user.email === ADMIN_EMAIL;
+      user.isAdmin = isAdmin;
+
+      dispatch(loginSuccess({ user, token: data.token }));
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', data.token);
+
+      navigate(isAdmin ? '/admin' : '/home');
+    } catch (err) {
+      console.error('Login error:', err);
       alert('Server error');
     }
   };

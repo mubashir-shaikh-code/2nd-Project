@@ -9,7 +9,7 @@ import Footer from './components/Footer';
 import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
-import AdminPanel from './components/AdminPanel'; // ✅ Import Admin Pane
+import AdminPanel from './components/AdminPanel';
 
 const App = () => {
   const location = useLocation();
@@ -18,34 +18,69 @@ const App = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = localStorage.getItem('isAdmin') === 'true';
+  const isLoggedIn = !!user || isAdmin;
+
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
   };
-
-  const isAdmin = localStorage.getItem('isAdmin');
 
   return (
     <>
       {location.pathname !== '/' && <Navbar sup={sup} />}
 
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
+        {/* Public Login Route */}
         <Route
-          path="/products"
-          element={<Products addToCart={handleAddToCart} />}
-        />
-        <Route
-          path="/cart"
-          element={<Cart cartItems={cartItems} clear={() => dispatch(clearCart())} />}
+          path="/"
+          element={
+            isLoggedIn
+              ? isAdmin
+                ? <Navigate to="/admin" />
+                : <Navigate to="/home" />
+              : <Login />
+          }
         />
 
-        {/* ✅ Admin route (protected) */}
+        {/* Admin Protected Route */}
         <Route
           path="/admin"
           element={isAdmin ? <AdminPanel /> : <Navigate to="/" />}
+        />
+
+        {/* User Protected Routes */}
+        <Route
+          path="/home"
+          element={isLoggedIn && !isAdmin ? <Home /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/about"
+          element={isLoggedIn && !isAdmin ? <About /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/contact"
+          element={isLoggedIn && !isAdmin ? <Contact /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/products"
+          element={
+            isLoggedIn && !isAdmin ? (
+              <Products addToCart={handleAddToCart} />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            isLoggedIn && !isAdmin ? (
+              <Cart cartItems={cartItems} clear={() => dispatch(clearCart())} />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
         />
       </Routes>
 

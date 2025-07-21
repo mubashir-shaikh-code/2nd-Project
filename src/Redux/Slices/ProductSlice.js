@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// ✅ Async thunk to fetch products (all products from backend)
+// ✅ Fetch all products (admin view or homepage)
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async () => {
@@ -10,7 +10,7 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// ✅ Async thunk to post a new product
+// ✅ Post new product (user)
 export const postProduct = createAsyncThunk(
   'products/postProduct',
   async ({ payload, token }) => {
@@ -18,14 +18,14 @@ export const postProduct = createAsyncThunk(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // 🔐 Protected route with JWT
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Product post failed');
-    return data.product; // this gets added to redux state
+    return data.product;
   }
 );
 
@@ -33,34 +33,56 @@ export const postProduct = createAsyncThunk(
 const productSlice = createSlice({
   name: 'products',
   initialState: {
-    allProducts: [],     // contains all products
-    status: 'idle',      // loading status
-    error: null,         // error if any
+    allProducts: [],           // all products fetched (admin/homepage)
+    approvedProducts: [],      // filtered approved
+    pendingProducts: [],       // filtered pending
+    userProducts: [],          // current user’s own products
+    status: 'idle',
+    error: null,
   },
   reducers: {
-    // You can add reducers like filter by user/email/status if needed
+    filterProductsByUser(state, action) {
+      const email = action.payload;
+      state.userProducts = state.allProducts.filter(
+        (p) => p.userEmail === email
+      );
+      state.pendingProducts = state.userProducts.filter(
+        (p) => p.status === 'pending'
+      );
+      state.approvedProducts = state.userProducts.filter(
+        (p) => p.status === 'approved'
+      );
+    },
+    filterApprovedForHome(state) {
+      state.approvedProducts = state.allProducts.filter(
+        (p) => p.status === 'approved'
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
-      // 🔄 Fetch Products
+      // ✅ Fetch
       .addCase(fetchProducts.pending, (state) => {
         state.status = 'loading';
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.allProducts = action.payload;
+        state.approvedProducts = action.payload.filter(
+          (p) => p.status === 'approved'
+        );
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
       })
 
-      // ✅ Post New Product
+      // ✅ Post new product
       .addCase(postProduct.fulfilled, (state, action) => {
-        // add to beginning of array
         state.allProducts.unshift(action.payload);
       });
   },
 });
 
+export const { filterProductsByUser, filterApprovedForHome } = productSlice.actions;
 export default productSlice.reducer;
