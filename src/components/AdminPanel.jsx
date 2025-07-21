@@ -25,13 +25,17 @@ const AdminPanel = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(
-        'https://2nd-project-backend-production.up.railway.app/api/products'
-      );
-      const data = res.data;
+      const token = localStorage.getItem('token');
 
-      setPendingProducts(data.filter((p) => p.status === 'pending'));
-      setApprovedProducts(data.filter((p) => p.status === 'approved'));
+      const [approvedRes, pendingRes] = await Promise.all([
+        axios.get('https://2nd-project-backend-production.up.railway.app/api/products'),
+        axios.get('https://2nd-project-backend-production.up.railway.app/api/products/pending', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setApprovedProducts(approvedRes.data);
+      setPendingProducts(pendingRes.data);
     } catch (error) {
       console.error('Error fetching products:', error);
     }
@@ -75,7 +79,7 @@ const AdminPanel = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('isAdmin');
-    navigate('/login');
+    navigate('/');
   };
 
   useEffect(() => {
@@ -103,7 +107,9 @@ const AdminPanel = () => {
               backgroundColor: '#fff',
             }}
           >
-            <Typography variant="h6">{product.name}</Typography>
+            <Typography variant="h6">
+              {product.description || 'No Description'}
+            </Typography>
             <Typography>Category: {product.category}</Typography>
             <Typography>Description: {product.description}</Typography>
 

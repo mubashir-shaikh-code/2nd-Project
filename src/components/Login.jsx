@@ -9,10 +9,7 @@ const ADMIN_EMAIL = 'admin@liflow.com';
 const ADMIN_PASS = 'admin123';
 
 const Login = () => {
-  const [isSignIn, setIsSignIn] = useState(true); // default to login
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-
+  const [isSignIn, setIsSignIn] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -20,17 +17,18 @@ const Login = () => {
     profilePic: null,
   });
 
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'profilePic') {
-      const file = files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setFormData((prev) => ({ ...prev, profilePic: reader.result }));
-        };
-        reader.readAsDataURL(file);
-      }
+
+    if (name === 'profilePic' && files?.[0]) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, profilePic: reader.result }));
+      };
+      reader.readAsDataURL(files[0]);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -39,7 +37,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Handle admin login directly
+    // ✅ Handle admin login directly in frontend
     if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASS) {
       const adminUser = {
         username: 'Admin',
@@ -56,46 +54,44 @@ const Login = () => {
       return;
     }
 
-    // ✅ Handle user login or registration via API
+    // ✅ Handle user login/registration via API
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
-      const body = isSignIn
+      const payload = isSignIn
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const res = await fetch(
+      const response = await fetch(
         `https://2nd-project-backend-production.up.railway.app${endpoint}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify(payload),
         }
       );
 
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await response.json();
+
+      if (!response.ok) {
         alert(data.error || 'Something went wrong');
         return;
       }
 
-      alert(data.message || (isSignIn ? 'Login successful' : 'Registration successful'));
-
       if (!isSignIn) {
-        setIsSignIn(true); // go to login after signup
+        alert('Registration successful! Please sign in.');
+        setIsSignIn(true);
         return;
       }
 
-      const user = { ...data.user, isAdmin: false }; // ensure not admin
+      const user = { ...data.user, isAdmin: false };
       dispatch(loginSuccess({ user, token: data.token }));
-
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
       localStorage.setItem('isAdmin', 'false');
-
       navigate('/home');
-    } catch (err) {
-      console.error('Login error:', err);
-      alert('Server error');
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Server error. Please try again.');
     }
   };
 
@@ -110,9 +106,7 @@ const Login = () => {
         </h1>
         <div
           className="h-2 w-10 bg-black rounded-full mx-auto my-4 transition-transform duration-500"
-          style={{
-            transform: isSignIn ? 'translateX(35px)' : 'translateX(0px)',
-          }}
+          style={{ transform: isSignIn ? 'translateX(35px)' : 'translateX(0px)' }}
         ></div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

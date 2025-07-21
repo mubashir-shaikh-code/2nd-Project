@@ -1,6 +1,5 @@
 // src/components/PostProduct.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FaPen, FaDollarSign, FaImage, FaTags } from 'react-icons/fa';
 import { useDispatch } from 'react-redux';
 import { postProduct } from '../Redux/Slices/ProductSlice';
@@ -15,7 +14,6 @@ const PostProduct = ({ show, onClose }) => {
   });
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
 
@@ -47,10 +45,11 @@ const PostProduct = ({ show, onClose }) => {
 
     try {
       await dispatch(postProduct({ payload, token })).unwrap();
-      alert('Product posted successfully!');
-      onClose();
-      navigate('/products');
+      alert('Product submitted for approval!');
+      onClose(); // close modal
+      // Optionally: navigate('/home') or let user stay
     } catch (error) {
+      console.error('Post error:', error);
       alert(error.message || 'Product post failed.');
     }
   };
