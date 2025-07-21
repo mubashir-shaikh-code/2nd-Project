@@ -1,10 +1,13 @@
+// src/components/Products.jsx
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../Redux/Slices/ProductSlice';
 import { addToCart } from '../Redux/Slices/CartSlice';
+import { useLocation } from 'react-router-dom';
 
 const Products = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { allProducts = [], status, error } = useSelector((state) => state.products || {});
 
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -12,23 +15,22 @@ const Products = () => {
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
+  // 👇 Fetch products when component mounts or when URL changes (like after navigate('/products'))
   useEffect(() => {
     dispatch(fetchProducts());
-  }, [dispatch]);
+  }, [dispatch, location.pathname]);
 
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
   };
 
   const filteredProducts = Array.isArray(allProducts)
-  ? allProducts.filter((p) => {
-      const matchesCategory =
-        selectedCategory === 'All' || p.category === selectedCategory;
-      const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    })
-  : [];
-
+    ? allProducts.filter((p) => {
+        const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+        const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+      })
+    : [];
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4">
@@ -61,14 +63,13 @@ const Products = () => {
       </div>
 
       {/* Product List */}
-     {status === 'loading' ? (
-  <p className="text-center text-gray-600">Loading...</p>
-        ) : error ? (
-          <p className="text-center text-red-600">{error}</p>
-        ) : filteredProducts.length === 0 ? (
-          <p className="text-center text-gray-600">No products found.</p>
-        ) : (
-
+      {status === 'loading' ? (
+        <p className="text-center text-gray-600">Loading...</p>
+      ) : error ? (
+        <p className="text-center text-red-600">{error}</p>
+      ) : filteredProducts.length === 0 ? (
+        <p className="text-center text-gray-600">No products found.</p>
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredProducts.map((item, i) => (
             <div
