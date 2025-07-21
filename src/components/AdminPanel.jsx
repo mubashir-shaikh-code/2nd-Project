@@ -141,44 +141,46 @@ const AdminPanel = () => {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <Drawer
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            backgroundColor: '#f5f5f5',
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-      >
-        <Typography variant="h5" sx={{ p: 2 }}>
-          Admin Panel
-        </Typography>
-        <List>
-          <ListItem
-            button
-            selected={selectedTab === 'pending'}
-            onClick={() => setSelectedTab('pending')}
-          >
-            <PendingActionsIcon sx={{ mr: 1 }} />
-            <ListItemText primary="Pending Products" />
-          </ListItem>
-          <ListItem
-            button
-            selected={selectedTab === 'approved'}
-            onClick={() => setSelectedTab('approved')}
-          >
-            <CheckCircleIcon sx={{ mr: 1 }} />
-            <ListItemText primary="Approved Products" />
-          </ListItem>
-          <ListItem button onClick={handleLogout}>
-            <LogoutIcon sx={{ mr: 1 }} />
-            <ListItemText primary="Logout" />
-          </ListItem>
-        </List>
-      </Drawer>
+  sx={{
+    width: drawerWidth,
+    flexShrink: 0,
+    '& .MuiDrawer-paper': {
+      width: drawerWidth,
+      boxSizing: 'border-box',
+      backgroundColor: 'black',
+      color: 'white', // Apply text color to drawer globally
+    },
+  }}
+  variant="permanent"
+  anchor="left"
+>
+  <Typography variant="h5" sx={{ p: 2, color: 'white' }}>
+    Admin Panel
+  </Typography>
+  <List>
+    <ListItem
+      button
+      selected={selectedTab === 'pending'}
+      onClick={() => setSelectedTab('pending')}
+    >
+      <PendingActionsIcon sx={{ mr: 1, color: 'white' ,cursor: 'pointer'}} />
+      <ListItemText primary="Pending Products" sx={{ color: 'white', cursor: 'pointer' }} />
+    </ListItem>
+    <ListItem
+      button
+      selected={selectedTab === 'approved'}
+      onClick={() => setSelectedTab('approved')}
+    >
+      <CheckCircleIcon sx={{ mr: 1, color: 'white' ,cursor: 'pointer'}} />
+      <ListItemText primary="Approved Products" sx={{ color: 'white' ,cursor: 'pointer' }} />
+    </ListItem>
+    <ListItem button onClick={handleLogout}>
+      <LogoutIcon sx={{ mr: 1, color: 'white' ,cursor: 'pointer'}} />
+      <ListItemText primary="Logout" sx={{ color: 'white' ,cursor: 'pointer'}} />
+    </ListItem>
+  </List>
+</Drawer>
+
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
