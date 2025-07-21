@@ -4,13 +4,13 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 // ✅ Async Thunks
 export const fetchProducts = createAsyncThunk('products/fetchProducts', async () => {
-  const res = await fetch('http://localhost:5000/api/products');
+  const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products');
   const data = await res.json();
   return data;
 });
 
 export const postProduct = createAsyncThunk('products/postProduct', async ({ payload, token }) => {
-  const res = await fetch('http://localhost:5000/api/products', {
+  const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
