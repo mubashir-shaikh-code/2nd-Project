@@ -1,0 +1,105 @@
+import React, { useEffect, useState } from 'react';
+import { Box, CssBaseline, Drawer, List, ListItem, ListItemText, Typography } from '@mui/material';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { useNavigate } from 'react-router-dom';
+
+const drawerWidth = 240;
+
+const AdminPanel = () => {
+  const navigate = useNavigate();
+  const [selectedTab, setSelectedTab] = useState('pending');
+  const [pendingProducts, setPendingProducts] = useState([]);
+  const [approvedProducts, setApprovedProducts] = useState([]);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/products');
+      const data = await res.json();
+
+      setPendingProducts(data.filter(p => p.status === 'pending'));
+      setApprovedProducts(data.filter(p => p.status === 'approved'));
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const approveProduct = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/api/products/approve/${id}`, {
+        method: 'PUT',
+      });
+      fetchProducts(); // Refresh lists
+    } catch (err) {
+      console.error('Error approving product:', err);
+    }
+  };
+
+  useEffect(() => {
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin) navigate('/login');
+    fetchProducts();
+  }, []);
+
+  const renderProducts = (products, isPending) => (
+    <Box sx={{ padding: 2 }}>
+      {products.length === 0 ? (
+        <Typography>No products available.</Typography>
+      ) : (
+        products.map((product) => (
+          <Box key={product._id} sx={{ border: '1px solid #ccc', mb: 2, p: 2, borderRadius: 2 }}>
+            <Typography variant="h6">{product.name}</Typography>
+            <Typography>Category: {product.category}</Typography>
+            <Typography>Description: {product.description}</Typography>
+            {isPending && (
+              <button onClick={() => approveProduct(product._id)} style={{ marginTop: 10 }}>
+                Approve
+              </button>
+            )}
+          </Box>
+        ))
+      )}
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: '#f5f5f5'
+          },
+        }}
+        variant="permanent"
+        anchor="left"
+      >
+        <Typography variant="h5" sx={{ p: 2 }}>Admin Panel</Typography>
+        <List>
+          <ListItem button selected={selectedTab === 'pending'} onClick={() => setSelectedTab('pending')}>
+            <PendingActionsIcon sx={{ mr: 1 }} />
+            <ListItemText primary="Pending Products" />
+          </ListItem>
+          <ListItem button selected={selectedTab === 'approved'} onClick={() => setSelectedTab('approved')}>
+            <CheckCircleIcon sx={{ mr: 1 }} />
+            <ListItemText primary="Approved Products" />
+          </ListItem>
+        </List>
+      </Drawer>
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
+          {selectedTab === 'pending' ? 'Pending Products' : 'Approved Products'}
+        </Typography>
+        {selectedTab === 'pending'
+          ? renderProducts(pendingProducts, true)
+          : renderProducts(approvedProducts, false)}
+      </Box>
+    </Box>
+  );
+};
+
+export default AdminPanel;

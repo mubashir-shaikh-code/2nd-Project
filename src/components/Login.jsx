@@ -34,6 +34,25 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Admin login shortcut
+    if (
+      formData.email === 'admin@liflow.com' &&
+      formData.password === 'admin123'
+    ) {
+      const adminUser = {
+        username: 'Admin',
+        email: 'admin@liflow.com',
+        profilePic: null,
+        isAdmin: true,
+      };
+
+      dispatch(loginSuccess({ user: adminUser, token: 'admin-token' }));
+      localStorage.setItem('user', JSON.stringify(adminUser));
+      localStorage.setItem('token', 'admin-token');
+      navigate('/admin');
+      return;
+    }
+
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
       const bodyData = isSignIn
@@ -53,17 +72,30 @@ const Login = () => {
 
       if (!res.ok) {
         alert(data.error || 'Something went wrong');
-      } else {
-        alert(data.message || 'Success');
+        return;
+      }
 
-        if (!isSignIn) {
-          setIsSignIn(true); // Switch to login form
-        } else {
-          dispatch(loginSuccess({ user: data.user, token: data.token }));
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('token', data.token);
-          navigate('/home');
-        }
+      alert(data.message || 'Success');
+
+      if (!isSignIn) {
+        setIsSignIn(true); // Switch to login form
+      } else {
+        const isAdmin = data.user?.email === 'admin@liflow.com';
+
+        dispatch(
+          loginSuccess({
+            user: { ...data.user, isAdmin },
+            token: data.token,
+          })
+        );
+
+        localStorage.setItem(
+          'user',
+          JSON.stringify({ ...data.user, isAdmin })
+        );
+        localStorage.setItem('token', data.token);
+
+        navigate(isAdmin ? '/admin' : '/home');
       }
     } catch (error) {
       console.error('Login failed', error);
