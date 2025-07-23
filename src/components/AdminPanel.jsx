@@ -112,6 +112,7 @@ const AdminPanel = () => {
             </Typography>
             <Typography>Category: {product.category}</Typography>
             <Typography>Description: {product.description}</Typography>
+            <Typography>Price: {product.price}</Typography>
 
             {isPending && (
               <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
