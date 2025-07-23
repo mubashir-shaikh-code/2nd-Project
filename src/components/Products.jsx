@@ -1,4 +1,3 @@
-// src/components/Products.jsx
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../Redux/Slices/ProductSlice';
@@ -15,7 +14,7 @@ const Products = () => {
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // 👇 Fetch products when component mounts or when URL changes (like after navigate('/products'))
+  // 👇 Fetch products 
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch, location.pathname]);
