@@ -46,8 +46,7 @@ const PostProduct = ({ show, onClose }) => {
     try {
       await dispatch(postProduct({ payload, token })).unwrap();
       alert('Product submitted for approval!');
-      onClose(); // close modal
-      // Optionally: navigate('/home') or let user stay
+      onClose(); 
     } catch (error) {
       console.error('Post error:', error);
       alert(error.message || 'Product post failed.');
@@ -85,7 +84,7 @@ const PostProduct = ({ show, onClose }) => {
             <input
               type="number"
               name="price"
-              placeholder="Price"
+              placeholder="Price $"
               required
               onChange={handleChange}
               className="bg-transparent flex-1 outline-none"
