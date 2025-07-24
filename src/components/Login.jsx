@@ -20,7 +20,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // 🔁 Check token expiry on load and interval
+  // 🔁 Session check (optional)
   useEffect(() => {
     const checkToken = () => {
       const token = localStorage.getItem('token');
@@ -79,12 +79,17 @@ const Login = () => {
       return;
     }
 
-    // ✅ Regular User Login/Register
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
+
       const payload = isSignIn
         ? { email: formData.email, password: formData.password }
-        : formData;
+        : {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            profilePic: formData.profilePic,
+          };
 
       const response = await fetch(
         `https://2nd-project-backend-production.up.railway.app${endpoint}`,
@@ -108,7 +113,14 @@ const Login = () => {
         return;
       }
 
-      const user = { ...data.user, isAdmin: false };
+      // ✅ Store user data
+      const user = {
+        username: data.user.username || 'User',
+        email: data.user.email,
+        profilePic: data.user.profilePic || formData.profilePic || null,
+        isAdmin: false,
+      };
+
       dispatch(loginSuccess({ user, token: data.token }));
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);

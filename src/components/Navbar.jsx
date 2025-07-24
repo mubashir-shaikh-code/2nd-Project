@@ -1,27 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaBars, FaTimes } from 'react-icons/fa';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const Navbar = ({ sup }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const user = useSelector((state) => state.auth.user);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
 
   const logout = () => {
     localStorage.clear();
-    setUser(null);
+    dispatch(logoutAction());
     navigate('/');
   };
+
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const renderLinks = () => (
     <>
@@ -56,24 +66,46 @@ const Navbar = ({ sup }) => {
   );
 
   const renderUserInfo = () => (
-    user && (
-      <>
-        {user.profilePic && (
-          <img
-            src={user.profilePic}
-            alt="Profile"
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        )}
-        <span className="text-sm">{user.username}</span>
+    user ? (
+      <div className="flex items-center gap-4">
+        {/* Dropdown trigger and menu */}
+        <div className="relative" ref={dropdownRef}>
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setShowDropdown(prev => !prev)}
+          >
+            {user.profilePic && (
+              <img
+                src={user.profilePic}
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            )}
+            <span className="text-sm">{user.username}</span>
+          </div>
+
+          {showDropdown && (
+            <div className="absolute top-10 right-0 bg-white text-black rounded shadow-md w-40 z-50">
+              <Link
+                to="/user-dashboard"
+                className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                onClick={() => setShowDropdown(false)}
+              >
+                User Dashboard
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Logout button stays outside dropdown */}
         <button
           onClick={logout}
-          className="ml-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
         >
           Logout
         </button>
-      </>
-    )
+      </div>
+    ) : null
   );
 
   return (
@@ -102,18 +134,27 @@ const Navbar = ({ sup }) => {
         <ul className="absolute top-[100px] left-0 w-full bg-black flex flex-col items-start p-6 space-y-6 sm:hidden transition-all duration-300">
           {renderLinks()}
           {user && (
-            <li className="flex items-center gap-2">
-              {user.profilePic && (
-                <img
-                  src={user.profilePic}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              )}
-              <span className="text-sm text-white">{user.username}</span>
+            <li className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                {user.profilePic && (
+                  <img
+                    src={user.profilePic}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
+                <span className="text-sm text-white">{user.username}</span>
+              </div>
+              <Link
+                to="/user-dashboard"
+                className="text-white underline text-sm"
+                onClick={closeMenu}
+              >
+                Dashboard
+              </Link>
               <button
                 onClick={logout}
-                className="ml-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
               >
                 Logout
               </button>

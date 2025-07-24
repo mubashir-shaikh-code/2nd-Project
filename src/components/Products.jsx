@@ -2,24 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchProducts } from '../Redux/Slices/ProductSlice';
 import { addToCart } from '../Redux/Slices/CartSlice';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Products = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
+
   const { allProducts = [], status, error } = useSelector((state) => state.products || {});
+  const user = useSelector((state) => state.auth.user); // ✅ Get logged-in user
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // 👇 Fetch products 
+  // 👇 Fetch products
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch, location.pathname]);
 
   const handleAddToCart = (item) => {
+    if (!user) {
+      alert('Please login first to add items to cart');
+      navigate('/login'); // or show a modal instead
+      return;
+    }
     dispatch(addToCart(item));
   };
 

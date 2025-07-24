@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="bg-black">
       <p className="text-center text-white text-lg ">
-        &copy; 2023. All rights reserved by LiFlow
+        &copy; 2025. All rights reserved by LiFlow
       </p>
     </footer>
   );
