@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import jwtDecode from 'jwt-decode';
 
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
 import Login from './components/Login';
@@ -19,19 +20,45 @@ const App = () => {
 
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
+  const [validSession, setValidSession] = useState(false);
 
   // Clear localStorage on first load
   useEffect(() => {
     if (!sessionStorage.getItem('visited')) {
       localStorage.removeItem('user');
       localStorage.removeItem('isAdmin');
-      sessionStorage.setItem('visited', 'true'); // Prevent loop
+      localStorage.removeItem('token');
+      sessionStorage.setItem('visited', 'true');
     }
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const now = Date.now() / 1000; // in seconds
+
+        if (decoded.exp && decoded.exp < now) {
+          // ❌ Token expired
+          localStorage.clear();
+          setValidSession(false);
+        } else {
+          setValidSession(true); // ✅ Valid session
+        }
+      } catch (err) {
+        console.error('Invalid token:', err);
+        localStorage.clear();
+        setValidSession(false);
+      }
+    } else {
+      setValidSession(false);
+    }
+  }, [location.pathname]); // revalidate on every route change
+
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
-  const isLoggedIn = !!user;
+  const isLoggedIn = !!user && validSession;
 
   const handleAddToCart = (item) => {
     dispatch(addToCart(item));
@@ -39,11 +66,9 @@ const App = () => {
 
   return (
     <>
-      {/* Show Navbar only if not on login and not admin */}
       {location.pathname !== '/' && !isAdmin && <Navbar sup={sup} />}
 
       <Routes>
-        {/* Login route */}
         <Route
           path="/"
           element={
@@ -55,13 +80,11 @@ const App = () => {
           }
         />
 
-        {/* Admin panel */}
         <Route
           path="/admin"
           element={isLoggedIn && isAdmin ? <AdminPanel /> : <Navigate to="/" />}
         />
 
-        {/* User-only routes */}
         <Route
           path="/home"
           element={isLoggedIn && !isAdmin ? <Home /> : <Navigate to="/" />}
@@ -96,7 +119,6 @@ const App = () => {
         />
       </Routes>
 
-      {/* Footer only if not on login or admin */}
       {location.pathname !== '/' && !isAdmin && <Footer />}
     </>
   );
