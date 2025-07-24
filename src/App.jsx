@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
@@ -15,11 +15,13 @@ import AdminPanel from './components/AdminPanel';
 
 const App = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
   const [validSession, setValidSession] = useState(false);
+  const [hasExpired, setHasExpired] = useState(false);
 
   // Clear localStorage on first load
   useEffect(() => {
@@ -31,39 +33,47 @@ const App = () => {
     }
   }, []);
 
- useEffect(() => {
-  const checkTokenValidity = () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        const now = Date.now() / 1000;
+  useEffect(() => {
+    const checkTokenValidity = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          const now = Date.now() / 1000;
 
-        if (decoded.exp && decoded.exp < now) {
-          // ❌ Token expired
-          localStorage.clear();
+          if (decoded.exp && decoded.exp < now) {
+            // Token expired
+            setValidSession(false);
+            setHasExpired(true); // show alert
+            localStorage.clear();
+          } else {
+            setValidSession(true);
+          }
+        } catch (err) {
+          console.error('Invalid token:', err);
           setValidSession(false);
-          window.location.href = '/'; // redirect to login
-        } else {
-          setValidSession(true); // ✅ Still valid
+          setHasExpired(true); // show alert
+          localStorage.clear();
         }
-      } catch (err) {
-        console.error('Invalid token:', err);
-        localStorage.clear();
+      } else {
         setValidSession(false);
-        window.location.href = '/';
       }
-    } else {
-      setValidSession(false);
+    };
+
+    checkTokenValidity(); // run once on mount
+
+    const interval = setInterval(checkTokenValidity, 5000); // check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (hasExpired) {
+      alert('Session expired. Please log in again.');
+      navigate('/');
+      setHasExpired(false);
     }
-  };
-
-  checkTokenValidity(); // run immediately
-
-  const interval = setInterval(checkTokenValidity, 5000); // check every 5 seconds
-
-  return () => clearInterval(interval); // cleanup
-}, []);
+  }, [hasExpired, navigate]);
 
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
