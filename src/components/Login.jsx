@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUser, FaAt, FaLock } from 'react-icons/fa';
 import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +20,31 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // 🔁 Check token expiry on load and interval
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        if (decoded.exp * 1000 < Date.now()) {
+          alert('Session expired. Please login again.');
+          localStorage.clear();
+          navigate('/');
+        }
+      } catch {
+        alert('Invalid token. Please login again.');
+        localStorage.clear();
+        navigate('/');
+      }
+    };
+
+    checkToken();
+    const interval = setInterval(checkToken, 5000);
+    return () => clearInterval(interval);
+  }, [navigate]);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -37,7 +62,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Handle admin login directly in frontend
+    // ✅ Admin Login
     if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASS) {
       const adminUser = {
         username: 'Admin',
@@ -54,7 +79,7 @@ const Login = () => {
       return;
     }
 
-    // ✅ Handle user login/registration via API
+    // ✅ Regular User Login/Register
     try {
       const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
       const payload = isSignIn
