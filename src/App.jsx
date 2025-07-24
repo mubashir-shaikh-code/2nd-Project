@@ -32,29 +32,39 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
+  const checkTokenValidity = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        const now = Date.now() / 1000; // in seconds
+        const now = Date.now() / 1000;
 
         if (decoded.exp && decoded.exp < now) {
           // ❌ Token expired
           localStorage.clear();
           setValidSession(false);
+          window.location.href = '/'; // redirect to login
         } else {
-          setValidSession(true); // ✅ Valid session
+          setValidSession(true); // ✅ Still valid
         }
       } catch (err) {
         console.error('Invalid token:', err);
         localStorage.clear();
         setValidSession(false);
+        window.location.href = '/';
       }
     } else {
       setValidSession(false);
     }
-  }, [location.pathname]); // revalidate on every route change
+  };
+
+  checkTokenValidity(); // run immediately
+
+  const interval = setInterval(checkTokenValidity, 5000); // check every 5 seconds
+
+  return () => clearInterval(interval); // cleanup
+}, []);
 
   const user = JSON.parse(localStorage.getItem('user'));
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
