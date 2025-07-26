@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
-
 import Login from './components/Login';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -13,6 +12,7 @@ import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
+import UserDashboard from './components/UserDashboard';
 
 const App = () => {
   const location = useLocation();
@@ -21,7 +21,7 @@ const App = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
-  // ✅ JWT session validation (but no redirect)
+  // ✅ JWT session validation
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -62,6 +62,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/UserDashboard" element={<UserDashboard />} />
         <Route path="/products" element={<Products addToCart={handleAddToCart} />} />
         <Route
           path="/cart"

@@ -85,7 +85,7 @@ const AdminPanel = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('isAdmin');
-    navigate('/');
+    navigate('/home');
   };
 
   useEffect(() => {

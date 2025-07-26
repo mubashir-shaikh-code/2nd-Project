@@ -22,7 +22,6 @@ const Navbar = ({ sup }) => {
     navigate('/');
   };
 
-  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -40,17 +39,7 @@ const Navbar = ({ sup }) => {
       <li><Link onClick={closeMenu} to="/about" className="hover:text-gray-300">About</Link></li>
       <li><Link onClick={closeMenu} to="/contact" className="hover:text-gray-300">Contact</Link></li>
 
-      {user?.isAdmin && (
-        <li>
-          <Link
-            onClick={closeMenu}
-            to="/admin"
-            className="hover:text-yellow-300 font-semibold"
-          >
-            Admin Panel
-          </Link>
-        </li>
-      )}
+    
 
       <li className="relative">
         <Link onClick={closeMenu} to="/cart" className="hover:text-gray-300 text-xl relative">
@@ -65,61 +54,68 @@ const Navbar = ({ sup }) => {
     </>
   );
 
-  const renderUserInfo = () => (
-    user ? (
-      <div className="flex items-center gap-4">
-        {/* Dropdown trigger and menu */}
-        <div className="relative" ref={dropdownRef}>
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setShowDropdown(prev => !prev)}
-          >
-            {user.profilePic && (
-              <img
-                src={user.profilePic}
-                alt="Profile"
-                className="w-8 h-8 rounded-full object-cover"
-              />
+  const renderUserInfo = () => {
+    if (user) {
+      return (
+        <div className="flex items-center gap-4">
+          <div className="relative" ref={dropdownRef}>
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => setShowDropdown(prev => !prev)}
+            >
+              {user.profilePic && (
+                <img
+                  src={user.profilePic}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              )}
+              <span className="text-sm">{user.username}</span>
+            </div>
+
+            {showDropdown && (
+              <div className="absolute top-10 right-0 bg-white text-black rounded shadow-md w-40 z-50">
+                <Link
+                  to="/UserDashboard"
+                  className="block px-4 py-2 hover:bg-gray-100 text-sm"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  User Dashboard
+                </Link>
+              </div>
             )}
-            <span className="text-sm">{user.username}</span>
           </div>
 
-          {showDropdown && (
-            <div className="absolute top-10 right-0 bg-white text-black rounded shadow-md w-40 z-50">
-              <Link
-                to="/user-dashboard"
-                className="block px-4 py-2 hover:bg-gray-100 text-sm"
-                onClick={() => setShowDropdown(false)}
-              >
-                User Dashboard
-              </Link>
-            </div>
-          )}
+          <button
+            onClick={logout}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+          >
+            Logout
+          </button>
         </div>
+      );
+    }
 
-        {/* Logout button stays outside dropdown */}
-        <button
-          onClick={logout}
-          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-        >
-          Logout
+    // Show Login/Register if not logged in
+    return (
+      <button onClick={() => navigate('/login')} 
+      className='px-6 py-2 font-semibold cursor-pointer bg-white text-black rounded hover:bg-gray-800 transition'>
+                Login / Register
         </button>
-      </div>
-    ) : null
-  );
+    );
+  };
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-black text-white flex items-center justify-between px-6 h-[100px] z-50">
       <div className="text-2xl font-bold">LiFlow Store</div>
 
-      {/* Desktop Menu */}
       <div className="flex-1 flex justify-center">
         <ul className="hidden sm:flex space-x-8 items-center">
           {renderLinks()}
         </ul>
       </div>
 
-      {/* Desktop User Info */}
+      {/* Desktop Right Side */}
       <div className="hidden sm:flex items-center gap-2">
         {renderUserInfo()}
       </div>
@@ -133,7 +129,7 @@ const Navbar = ({ sup }) => {
       {isOpen && (
         <ul className="absolute top-[100px] left-0 w-full bg-black flex flex-col items-start p-6 space-y-6 sm:hidden transition-all duration-300">
           {renderLinks()}
-          {user && (
+          {user ? (
             <li className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 {user.profilePic && (
@@ -158,6 +154,13 @@ const Navbar = ({ sup }) => {
               >
                 Logout
               </button>
+            </li>
+          ) : (
+            <li>
+              <button onClick={() => navigate('/login')}
+               className='px-6 py-2 bg-white text-black cursor:pointer rounded hover:bg-gray-800 transition'>
+                Login / Register
+                </button>
             </li>
           )}
         </ul>

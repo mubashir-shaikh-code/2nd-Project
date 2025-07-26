@@ -88,7 +88,7 @@ const Login = () => {
             username: formData.username,
             email: formData.email,
             password: formData.password,
-            profilePic: formData.profilePic,
+            profilePic: formData.profilePic, // Send profilePic during sign up
           };
 
       const response = await fetch(
@@ -113,10 +113,8 @@ const Login = () => {
         return;
       }
 
-      // ✅ Store user data
       const user = {
-        username: data.user.username || 'User',
-        email: data.user.email,
+        ...data.user,
         profilePic: data.user.profilePic || formData.profilePic || null,
         isAdmin: false,
       };
@@ -137,7 +135,7 @@ const Login = () => {
       className="min-h-screen flex items-center justify-center bg-cover bg-center px-4"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-      <div className="bg-white/60 backdrop-blur-md p-10 rounded-3xl shadow-lg w-full max-w-md">
+      <div className="bg-white/60 backdrop-blur-md p-10 rounded-3xl shadow-lg w-full max-w-md mt-20">
         <h1 className="text-4xl text-center font-bold text-black">
           {isSignIn ? 'SIGN IN' : 'SIGN UP'}
         </h1>
