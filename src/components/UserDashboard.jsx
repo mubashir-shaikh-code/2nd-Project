@@ -1,7 +1,11 @@
 // components/UserDashboard.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchProducts, filterProductsByUser } from '../Redux/Slices/ProductSlice';
+import {
+  fetchProducts,
+  filterProductsByUser,
+  updateProduct,
+} from '../Redux/Slices/ProductSlice';
 import {
   Container,
   Typography,
@@ -12,11 +16,27 @@ import {
   TableBody,
   Paper,
   CircularProgress,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  DialogActions,
+  Button,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 
 const UserDashboard = () => {
   const dispatch = useDispatch();
   const { userProducts, status } = useSelector((state) => state.products);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [editedProduct, setEditedProduct] = useState({
+    description: '',
+    price: '',
+    category: '',
+  });
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -26,6 +46,32 @@ const UserDashboard = () => {
       dispatch(filterProductsByUser(user.email));
     }
   }, [dispatch]);
+
+  const handleEditClick = (product) => {
+    setCurrentProduct(product);
+    setEditedProduct({
+      description: product.description,
+      price: product.price,
+      category: product.category,
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setCurrentProduct(null);
+  };
+
+  const handleEditSave = () => {
+    if (currentProduct) {
+      dispatch(updateProduct({ id: currentProduct._id, updatedData: editedProduct }))
+        .unwrap()
+        .then(() => {
+          setEditOpen(false);
+          setCurrentProduct(null);
+        });
+    }
+  };
 
   return (
     <Container sx={{ mt: 15, textAlign: 'center' }}>
@@ -38,7 +84,7 @@ const UserDashboard = () => {
       ) : userProducts.length === 0 ? (
         <Typography>No products posted yet.</Typography>
       ) : (
-        <Paper sx={{ overflowX: 'auto' , mt: 5 , mb: 5 }}>
+        <Paper sx={{ overflowX: 'auto', mt: 5, mb: 5 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -46,6 +92,7 @@ const UserDashboard = () => {
                 <TableCell><strong>Price</strong></TableCell>
                 <TableCell><strong>Category</strong></TableCell>
                 <TableCell><strong>Status</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -62,12 +109,57 @@ const UserDashboard = () => {
                   >
                     {product.status}
                   </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleEditClick(product)}>
+                      <EditIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Paper>
       )}
+
+      <Dialog open={editOpen} onClose={handleEditClose}>
+        <DialogTitle>Edit Product</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            value={editedProduct.description}
+            onChange={(e) =>
+              setEditedProduct({ ...editedProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Price"
+            type="number"
+            fullWidth
+            value={editedProduct.price}
+            onChange={(e) =>
+              setEditedProduct({ ...editedProduct, price: e.target.value })
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Category"
+            fullWidth
+            value={editedProduct.category}
+            onChange={(e) =>
+              setEditedProduct({ ...editedProduct, category: e.target.value })
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Cancel</Button>
+          <Button onClick={handleEditSave} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
