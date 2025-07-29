@@ -21,15 +21,15 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  CircularProgress,
-  useMediaQuery
+  useMediaQuery,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
+
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts, filterProductsByUser, updateProduct } from '../Redux/Slices/ProductSlice';
+import { fetchProducts, updateProduct } from '../Redux/Slices/ProductSlice';
 import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -39,8 +39,7 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width:600px)');
 
-  const { userProducts, status } = useSelector((state) => state.products);
-
+  const { allProducts } = useSelector((state) => state.products);
   const [selectedTab, setSelectedTab] = useState('pending');
   const [editOpen, setEditOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -57,13 +56,7 @@ const UserDashboard = () => {
       navigate('/login');
       return;
     }
-
-    const fetchAndFilter = async () => {
-      await dispatch(fetchProducts());
-      dispatch(filterProductsByUser(user.email));
-    };
-
-    fetchAndFilter();
+    dispatch(fetchProducts());
   }, [dispatch, user, navigate]);
 
   const handleEditClick = (product) => {
@@ -84,8 +77,10 @@ const UserDashboard = () => {
   const handleEditSave = async () => {
     try {
       if (currentProduct) {
-        await dispatch(updateProduct({ id: currentProduct._id, updatedData: editedProduct })).unwrap();
-        dispatch(filterProductsByUser(user.email));
+        await dispatch(
+          updateProduct({ id: currentProduct._id, updatedData: editedProduct })
+        ).unwrap();
+        dispatch(fetchProducts());
         handleEditClose();
       }
     } catch (err) {
@@ -98,8 +93,10 @@ const UserDashboard = () => {
     navigate('/login');
   };
 
-  const filteredProducts = userProducts.filter((p) =>
-    selectedTab === 'approved' ? p.status === 'approved' : p.status === 'pending'
+  const userProducts = allProducts?.filter(
+    (p) =>
+      p.userId === user?._id &&
+      (selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved')
   );
 
   const renderTable = (products) => (
@@ -115,7 +112,7 @@ const UserDashboard = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {products.length > 0 ? (
+          {products && products.length > 0 ? (
             products.map((product) => (
               <TableRow key={product._id}>
                 <TableCell>{product.description}</TableCell>
@@ -134,7 +131,7 @@ const UserDashboard = () => {
           ) : (
             <TableRow>
               <TableCell colSpan={5} align="center">
-                No products found.
+                No {selectedTab === 'approved' ? 'approved' : 'pending'} products found.
               </TableCell>
             </TableRow>
           )}
@@ -191,18 +188,11 @@ const UserDashboard = () => {
       </Drawer>
 
       {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ mt: 10, flexGrow: 1, p: 3 }}>
         <Typography variant="h4" gutterBottom>
           {selectedTab === 'pending' ? 'Pending Products' : 'Approved Products'}
         </Typography>
-
-        {status === 'loading' ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          renderTable(filteredProducts)
-        )}
+        {renderTable(userProducts)}
       </Box>
 
       {/* Edit Dialog */}

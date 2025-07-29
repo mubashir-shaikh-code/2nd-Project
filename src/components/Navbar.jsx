@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaShoppingCart, FaBars, FaTimes } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
@@ -10,6 +10,7 @@ const Navbar = ({ sup }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const user = useSelector((state) => state.auth.user);
 
@@ -39,8 +40,6 @@ const Navbar = ({ sup }) => {
       <li><Link onClick={closeMenu} to="/about" className="hover:text-gray-300">About</Link></li>
       <li><Link onClick={closeMenu} to="/contact" className="hover:text-gray-300">Contact</Link></li>
 
-    
-
       <li className="relative">
         <Link onClick={closeMenu} to="/cart" className="hover:text-gray-300 text-xl relative">
           <FaShoppingCart />
@@ -56,6 +55,8 @@ const Navbar = ({ sup }) => {
 
   const renderUserInfo = () => {
     if (user) {
+      const isUserDashboard = location.pathname === '/UserDashboard';
+
       return (
         <div className="flex items-center gap-4">
           <div className="relative" ref={dropdownRef}>
@@ -86,22 +87,24 @@ const Navbar = ({ sup }) => {
             )}
           </div>
 
-          <button
-            onClick={logout}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-          >
-            Logout
-          </button>
+          {/* ❌ Hide logout on UserDashboard */}
+          {!isUserDashboard && (
+            <button
+              onClick={logout}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+            >
+              Logout
+            </button>
+          )}
         </div>
       );
     }
 
-    // Show Login/Register if not logged in
     return (
       <button onClick={() => navigate('/login')} 
-      className='px-6 py-2 font-semibold cursor-pointer bg-white text-black rounded hover:bg-gray-800 transition'>
-                Login / Register
-        </button>
+        className='px-6 py-2 font-semibold cursor-pointer bg-white text-black rounded hover:bg-gray-800 transition'>
+        Login / Register
+      </button>
     );
   };
 
@@ -115,17 +118,14 @@ const Navbar = ({ sup }) => {
         </ul>
       </div>
 
-      {/* Desktop Right Side */}
       <div className="hidden sm:flex items-center gap-2">
         {renderUserInfo()}
       </div>
 
-      {/* Mobile Toggle Button */}
       <div className="sm:hidden text-2xl cursor-pointer" onClick={toggleMenu}>
         {isOpen ? <FaTimes /> : <FaBars />}
       </div>
 
-      {/* Mobile Dropdown */}
       {isOpen && (
         <ul className="absolute top-[100px] left-0 w-full bg-black flex flex-col items-start p-6 space-y-6 sm:hidden transition-all duration-300">
           {renderLinks()}
@@ -142,25 +142,29 @@ const Navbar = ({ sup }) => {
                 <span className="text-sm text-white">{user.username}</span>
               </div>
               <Link
-                to="/user-dashboard"
+                to="/UserDashboard"
                 className="text-white underline text-sm"
                 onClick={closeMenu}
               >
                 Dashboard
               </Link>
-              <button
-                onClick={logout}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-              >
-                Logout
-              </button>
+
+              {/* Hide logout on UserDashboard in mobile too */}
+              {location.pathname !== '/UserDashboard' && (
+                <button
+                  onClick={logout}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+                >
+                  Logout
+                </button>
+              )}
             </li>
           ) : (
             <li>
               <button onClick={() => navigate('/login')}
-               className='px-6 py-2 bg-white text-black cursor:pointer rounded hover:bg-gray-800 transition'>
+                className='px-6 py-2 bg-white text-black cursor:pointer rounded hover:bg-gray-800 transition'>
                 Login / Register
-                </button>
+              </button>
             </li>
           )}
         </ul>
