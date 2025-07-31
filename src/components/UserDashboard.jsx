@@ -50,14 +50,14 @@ const UserDashboard = () => {
     category: '',
   });
 
-  // ✅ Fetch user products on user change
+  // ✅ Fetch user products on relevant changes
   useEffect(() => {
     if (!user) {
       navigate('/login');
     } else {
-      dispatch(fetchUserProducts(user.email)); // 👈 Make sure your backend accepts email
+      dispatch(fetchUserProducts(user.email));
     }
-  }, [dispatch, navigate, user, editOpen]);
+  }, [dispatch, navigate, user, editOpen, selectedTab]);
 
   const handleEditClick = (product) => {
     setCurrentProduct(product);
@@ -80,7 +80,8 @@ const UserDashboard = () => {
         await dispatch(
           updateProduct({ id: currentProduct._id, updatedData: editedProduct })
         ).unwrap();
-        handleEditClose(); // triggers useEffect
+        handleEditClose();
+        dispatch(fetchUserProducts(user.email)); // ⏪ Force refresh after edit
       }
     } catch (err) {
       console.error('Update failed:', err);
@@ -92,11 +93,13 @@ const UserDashboard = () => {
     navigate('/');
   };
 
-  // ✅ Filter based on selectedTab and current user
+  // ✅ Filter by current tab and user
   const filteredProducts = userProducts.filter(
     (p) =>
       p.userEmail === user?.email &&
-      (selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved')
+      (selectedTab === 'approved'
+        ? p.status === 'approved'
+        : p.status !== 'approved')
   );
 
   const renderTable = (products) => (

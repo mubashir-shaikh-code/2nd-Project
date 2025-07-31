@@ -102,12 +102,11 @@ const productSlice = createSlice({
       })
 
       .addCase(updateProduct.fulfilled, (state, action) => {
-        const updated = action.payload;
-        const index = state.userProducts.findIndex((p) => p._id === updated._id);
-        if (index !== -1) {
-          state.userProducts[index] = updated;
-        }
-      });
+  const updated = action.payload;
+  state.userProducts = state.userProducts.filter((p) => p._id !== updated._id);
+  state.userProducts.unshift(updated);
+});
+
   },
 });
 
