@@ -12,7 +12,6 @@ import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
-import UserDashboard from './components/UserDashboard';
 
 const App = () => {
   const location = useLocation();
@@ -62,7 +61,6 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/UserDashboard" element={<UserDashboard />} />
         <Route path="/products" element={<Products addToCart={handleAddToCart} />} />
         <Route
           path="/cart"
