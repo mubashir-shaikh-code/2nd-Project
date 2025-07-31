@@ -11,7 +11,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
-  const { approvedProducts = [] } = useSelector((state) => state.products);
+  const { allProducts = [] } = useSelector((state) => state.products);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -55,7 +55,7 @@ const handlePostClick = () => {
       <div className="py-10 px-6">
         <h2 className="text-2xl font-bold mb-6 text-center">Featured Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {approvedProducts.slice(0, 4).map((product) => (
+          {allProducts.slice(0, 4).map((product) => (
             <div
               key={product._id}
               className="border p-4 rounded-xl shadow text-center flex flex-col items-center"

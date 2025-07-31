@@ -28,7 +28,7 @@ const Login = () => {
 
       try {
         const decoded = JSON.parse(atob(token.split('.')[1]));
-        if (decoded.exp * 2000 < Date.now()) {
+        if (decoded.exp * 1000 < Date.now()) {
           alert('Session expired. Please login again.');
           localStorage.clear();
           navigate('/');

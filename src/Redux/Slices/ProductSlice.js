@@ -11,12 +11,12 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// ✅ Fetch products by user email
+// ✅ FIXED: Correct user product fetch URL
 export const fetchUserProducts = createAsyncThunk(
   'products/fetchUserProducts',
   async (userEmail) => {
     const res = await fetch(
-      `https://2nd-project-backend-production.up.railway.app/api/products/user?userEmail=${userEmail}`
+      `https://2nd-project-backend-production.up.railway.app/api/products/user-products?userEmail=${encodeURIComponent(userEmail)}`
     );
     if (!res.ok) throw new Error('Failed to fetch user products');
     return await res.json();
@@ -42,7 +42,7 @@ export const postProduct = createAsyncThunk(
   }
 );
 
-// ✅ Update product
+// Update product
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async ({ id, updatedData }) => {
