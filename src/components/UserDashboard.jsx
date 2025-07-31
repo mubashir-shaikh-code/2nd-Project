@@ -27,9 +27,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
-
+import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts, updateProduct } from '../Redux/Slices/ProductSlice';
+import { fetchUserProducts, updateProduct } from '../Redux/Slices/ProductSlice';
 import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -38,8 +38,8 @@ const UserDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width:600px)');
+  const { userProducts } = useSelector((state) => state.products);
 
-  const { allProducts } = useSelector((state) => state.products);
   const [selectedTab, setSelectedTab] = useState('pending');
   const [editOpen, setEditOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -56,7 +56,7 @@ const UserDashboard = () => {
       navigate('/login');
       return;
     }
-    dispatch(fetchProducts());
+    dispatch(fetchUserProducts(user._email)); // ✅ Fetch only this user's products
   }, [dispatch, user, navigate]);
 
   const handleEditClick = (product) => {
@@ -74,29 +74,32 @@ const UserDashboard = () => {
     setCurrentProduct(null);
   };
 
-  const handleEditSave = async () => {
-    try {
-      if (currentProduct) {
-        await dispatch(
-          updateProduct({ id: currentProduct._id, updatedData: editedProduct })
-        ).unwrap();
-        dispatch(fetchProducts());
-        handleEditClose();
-      }
-    } catch (err) {
-      console.error('Update failed:', err);
+const handleEditSave = async () => {
+  try {
+    if (currentProduct) {
+      await dispatch(
+        updateProduct({ id: currentProduct._id, updatedData: editedProduct })
+      ).unwrap();
+
+      // ✅ Force re-fetch from DB after update
+      dispatch(fetchUserProducts(user.email));
+
+      handleEditClose();
     }
+  } catch (err) {
+    console.error('Update failed:', err);
+  }
+};
+
+
+  const logout = () => {
+    dispatch(logoutAction());
+    navigate('/');
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
-
-  const userProducts = allProducts?.filter(
-    (p) =>
-      p.userId === user?._id &&
-      (selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved')
+  // ✅ Filter products by status
+  const filteredProducts = userProducts.filter((p) =>
+    selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved'
   );
 
   const renderTable = (products) => (
@@ -180,7 +183,7 @@ const UserDashboard = () => {
             <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
             <ListItemText primary="Approved Products" />
           </ListItem>
-          <ListItem button onClick={handleLogout}>
+          <ListItem button onClick={logout}>
             <LogoutIcon sx={{ mr: 1, color: 'white' }} />
             <ListItemText primary="Logout" />
           </ListItem>
@@ -192,7 +195,7 @@ const UserDashboard = () => {
         <Typography variant="h4" gutterBottom>
           {selectedTab === 'pending' ? 'Pending Products' : 'Approved Products'}
         </Typography>
-        {renderTable(userProducts)}
+        {renderTable(filteredProducts)}
       </Box>
 
       {/* Edit Dialog */}

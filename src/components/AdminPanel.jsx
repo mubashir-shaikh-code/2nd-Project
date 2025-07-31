@@ -19,13 +19,17 @@ import {
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { useDispatch} from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
 
 const AdminPanel = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
@@ -81,12 +85,11 @@ const AdminPanel = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('isAdmin');
-    navigate('/home');
-  };
+   const logout = () => {
+       dispatch(logoutAction()); // ✅ This resets Redux state and localStorage internally
+      //  setShowDropdown(false);
+       navigate('/');
+     };
 
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
@@ -200,7 +203,7 @@ const AdminPanel = () => {
             <CheckCircleIcon sx={{ mr: 1, color: 'white', cursor: 'pointer' }} />
             <ListItemText primary="Approved Products" sx={{ color: 'white', cursor: 'pointer' }} />
           </ListItem>
-          <ListItem button onClick={handleLogout}>
+          <ListItem button onClick={logout}>
             <LogoutIcon sx={{ mr: 1, color: 'white', cursor: 'pointer' }} />
             <ListItemText primary="Logout" sx={{ color: 'white', cursor: 'pointer' }} />
           </ListItem>

@@ -18,8 +18,8 @@ const Navbar = ({ sup }) => {
   const closeMenu = () => setIsOpen(false);
 
   const logout = () => {
-    localStorage.clear();
-    dispatch(logoutAction());
+    dispatch(logoutAction()); // ✅ This resets Redux state and localStorage internally
+    setShowDropdown(false);
     navigate('/');
   };
 
@@ -39,7 +39,6 @@ const Navbar = ({ sup }) => {
       <li><Link onClick={closeMenu} to="/products" className="hover:text-gray-300">Products</Link></li>
       <li><Link onClick={closeMenu} to="/about" className="hover:text-gray-300">About</Link></li>
       <li><Link onClick={closeMenu} to="/contact" className="hover:text-gray-300">Contact</Link></li>
-
       <li className="relative">
         <Link onClick={closeMenu} to="/cart" className="hover:text-gray-300 text-xl relative">
           <FaShoppingCart />
@@ -87,7 +86,6 @@ const Navbar = ({ sup }) => {
             )}
           </div>
 
-          {/* ❌ Hide logout on UserDashboard */}
           {!isUserDashboard && (
             <button
               onClick={logout}
@@ -149,7 +147,6 @@ const Navbar = ({ sup }) => {
                 Dashboard
               </Link>
 
-              {/* Hide logout on UserDashboard in mobile too */}
               {location.pathname !== '/UserDashboard' && (
                 <button
                   onClick={logout}
