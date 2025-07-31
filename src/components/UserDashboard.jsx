@@ -38,8 +38,9 @@ const UserDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width:600px)');
-  const { userProducts } = useSelector((state) => state.products);
 
+  const { user } = useSelector((state) => state.auth);
+  const { userProducts } = useSelector((state) => state.products);
   const [selectedTab, setSelectedTab] = useState('pending');
   const [editOpen, setEditOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -49,15 +50,14 @@ const UserDashboard = () => {
     category: '',
   });
 
-  const user = JSON.parse(localStorage.getItem('user'));
-
+  // ✅ Fetch user products on user change
   useEffect(() => {
     if (!user) {
       navigate('/login');
-      return;
+    } else {
+      dispatch(fetchUserProducts(user.email)); // 👈 Make sure your backend accepts email
     }
-    dispatch(fetchUserProducts(user._email)); // ✅ Fetch only this user's products
-  }, [dispatch, user, navigate]);
+  }, [dispatch, navigate, user, editOpen]);
 
   const handleEditClick = (product) => {
     setCurrentProduct(product);
@@ -74,32 +74,29 @@ const UserDashboard = () => {
     setCurrentProduct(null);
   };
 
-const handleEditSave = async () => {
-  try {
-    if (currentProduct) {
-      await dispatch(
-        updateProduct({ id: currentProduct._id, updatedData: editedProduct })
-      ).unwrap();
-
-      // ✅ Force re-fetch from DB after update
-      dispatch(fetchUserProducts(user.email));
-
-      handleEditClose();
+  const handleEditSave = async () => {
+    try {
+      if (currentProduct) {
+        await dispatch(
+          updateProduct({ id: currentProduct._id, updatedData: editedProduct })
+        ).unwrap();
+        handleEditClose(); // triggers useEffect
+      }
+    } catch (err) {
+      console.error('Update failed:', err);
     }
-  } catch (err) {
-    console.error('Update failed:', err);
-  }
-};
-
+  };
 
   const logout = () => {
     dispatch(logoutAction());
     navigate('/');
   };
 
-  // ✅ Filter products by status
-  const filteredProducts = userProducts.filter((p) =>
-    selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved'
+  // ✅ Filter based on selectedTab and current user
+  const filteredProducts = userProducts.filter(
+    (p) =>
+      p.userEmail === user?.email &&
+      (selectedTab === 'approved' ? p.status === 'approved' : p.status !== 'approved')
   );
 
   const renderTable = (products) => (
@@ -115,7 +112,7 @@ const handleEditSave = async () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {products && products.length > 0 ? (
+          {products.length > 0 ? (
             products.map((product) => (
               <TableRow key={product._id}>
                 <TableCell>{product.description}</TableCell>
@@ -146,7 +143,6 @@ const handleEditSave = async () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
       <CssBaseline />
-
       {/* Sidebar */}
       <Drawer
         sx={{
