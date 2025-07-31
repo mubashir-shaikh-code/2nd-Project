@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   CssBaseline,
@@ -19,10 +19,9 @@ import {
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useDispatch} from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
@@ -34,22 +33,29 @@ const AdminPanel = () => {
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
 
-  const fetchProducts = async () => {
+  const fetchAllProducts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
+
       const [approvedRes, pendingRes] = await Promise.all([
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products'),
-        axios.get('https://2nd-project-backend-production.up.railway.app/api/products/pending', {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get('https://2nd-project-backend-production.up.railway.app/api/products/pending', config),
       ]);
 
       setApprovedProducts(approvedRes.data);
       setPendingProducts(pendingRes.data);
     } catch (error) {
       console.error('Error fetching products:', error);
+      if (error.response?.status === 401) {
+        alert('Unauthorized. Please login again.');
+        localStorage.clear();
+        navigate('/login');
+      }
     }
-  };
+  }, [navigate]);
 
   const approveProduct = async (id) => {
     try {
@@ -62,7 +68,7 @@ const AdminPanel = () => {
           },
         }
       );
-      fetchProducts();
+      fetchAllProducts();
     } catch (err) {
       console.error('Error approving product:', err);
     }
@@ -79,17 +85,17 @@ const AdminPanel = () => {
           },
         }
       );
-      fetchProducts();
+      fetchAllProducts();
     } catch (err) {
       console.error('Error rejecting product:', err);
     }
   };
 
-   const logout = () => {
-       dispatch(logoutAction()); // ✅ This resets Redux state and localStorage internally
-      //  setShowDropdown(false);
-       navigate('/');
-     };
+  const logout = () => {
+    dispatch(logoutAction());
+    localStorage.clear();
+    navigate('/');
+  };
 
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
@@ -97,8 +103,8 @@ const AdminPanel = () => {
       navigate('/login');
       return;
     }
-    fetchProducts();
-  }, [navigate]);
+    fetchAllProducts();
+  }, [fetchAllProducts, navigate]);
 
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
@@ -120,7 +126,7 @@ const AdminPanel = () => {
               <TableCell>
                 <Button
                   variant="contained"
-                  color='success'
+                  color="success"
                   size="small"
                   onClick={() => approveProduct(product._id)}
                   sx={{ mr: 1 }}
@@ -158,7 +164,7 @@ const AdminPanel = () => {
             <TableRow key={product._id}>
               <TableCell>{product.description || 'N/A'}</TableCell>
               <TableCell>${product.price || '0.00'}</TableCell>
-              <TableCell>{product.category || '0.00'}</TableCell>
+              <TableCell>{product.category || 'N/A'}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -192,20 +198,23 @@ const AdminPanel = () => {
             selected={selectedTab === 'pending'}
             onClick={() => setSelectedTab('pending')}
           >
-            <PendingActionsIcon sx={{ mr: 1, color: 'white', cursor: 'pointer' }} />
-            <ListItemText primary="Pending Products" sx={{ color: 'white', cursor: 'pointer' }} />
+            <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
+            <ListItemText primary="Pending Products" />
           </ListItem>
           <ListItem
             button
             selected={selectedTab === 'approved'}
             onClick={() => setSelectedTab('approved')}
           >
-            <CheckCircleIcon sx={{ mr: 1, color: 'white', cursor: 'pointer' }} />
-            <ListItemText primary="Approved Products" sx={{ color: 'white', cursor: 'pointer' }} />
+            <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
+            <ListItemText primary="Approved Products" />
           </ListItem>
-          <ListItem button onClick={logout}>
-            <LogoutIcon sx={{ mr: 1, color: 'white', cursor: 'pointer' }} />
-            <ListItemText primary="Logout" sx={{ color: 'white', cursor: 'pointer' }} />
+          <ListItem
+            button
+            onClick={logout}
+          >
+            <LogoutIcon sx={{ mr: 1, color: 'white' }} />
+            <ListItemText primary="Logout" />
           </ListItem>
         </List>
       </Drawer>

@@ -1,8 +1,9 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
+
 import Login from './components/Login';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -16,31 +17,32 @@ import AdminPanel from './components/AdminPanel';
 const App = () => {
   const location = useLocation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const cartItems = useSelector((state) => state.cart.cartItems);
   const sup = useSelector((state) => state.cart.sup);
 
-  // ✅ JWT session validation
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && typeof token === 'string' && token.split('.').length === 3) {
       try {
         const decoded = jwtDecode(token);
-        const isExpired = decoded.exp * 2000 < Date.now();
+        const isExpired = decoded.exp * 1000 < Date.now();
         if (isExpired) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isAdmin');
+          localStorage.clear();
           alert('Session expired. Please log in again.');
+          navigate('/login');
         }
       } catch (err) {
         console.error('Token decoding failed:', err);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAdmin');
+        localStorage.clear();
+        navigate('/login');
       }
+    } else {
+      // Token is missing or malformed
+      localStorage.clear();
     }
-  }, []);
+  }, [navigate]);
 
   const handleAddToCart = (item) => {
     const isLoggedIn = localStorage.getItem('user');
@@ -61,7 +63,10 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/products" element={<Products addToCart={handleAddToCart} />} />
+        <Route
+          path="/products"
+          element={<Products addToCart={handleAddToCart} />}
+        />
         <Route
           path="/cart"
           element={
