@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
-  console.log(cartItems,setCartItems, setSup, clear,"cartItems")
+  console.log(cartItems, setCartItems, setSup, clear, "cartItems");
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
 
   const increment = (index) => {
@@ -47,7 +47,6 @@ const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
               <span className="hidden sm:inline w-32 truncate">{item.title}</span>
               <span className="w-24 text-sm">${(item.price * quantities[index]).toFixed(2)}</span>
 
-              {/* Quantity Buttons */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => decrement(index)}
@@ -63,8 +62,6 @@ const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
                   +
                 </button>
               </div>
-
-              
             </div>
           ))}
 
@@ -74,15 +71,29 @@ const Cart = ({ cartItems, setCartItems, setSup, clear }) => {
             <p>Total Price: <strong>${total().toFixed(2)}</strong></p>
           </div>
 
+          <div className="flex justify-center gap-4 mt-6">
           <button
             onClick={clear}
             className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded cursor-pointer"
           >
             Clear Cart
           </button>
+
+          {/* ✅ Place Order Button */}
+          <button
+            onClick={() => {
+              // You can add the place order logic later here
+              console.log('Place Order clicked');
+            }}
+            className="  mt-6 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
+          >
+            Place Order
+          </button>
+          </div>
         </>
       )}
     </div>
   );
 };
+
 export default Cart;

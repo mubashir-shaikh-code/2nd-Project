@@ -4,8 +4,6 @@ import {
   CssBaseline,
   Drawer,
   List,
-  ListItem,
-  ListItemText,
   Typography,
   Button,
   Table,
@@ -13,6 +11,9 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  ListItem,
+  ListItemText,
+  ListItemButton,
   TableContainer,
   Paper,
 } from '@mui/material';
@@ -58,21 +59,22 @@ const AdminPanel = () => {
   }, [navigate]);
 
   const approveProduct = async (id) => {
-    try {
-      await axios.put(
-        `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
-        null,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
-      fetchAllProducts();
-    } catch (err) {
-      console.error('Error approving product:', err);
-    }
-  };
+  try {
+    await axios.patch(
+      `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      }
+    );
+    fetchAllProducts();
+  } catch (err) {
+    console.error('Error approving product:', err);
+  }
+};
+
 
   const rejectProduct = async (id) => {
     try {
@@ -193,28 +195,31 @@ const AdminPanel = () => {
           LiFlow Admin Panel
         </Typography>
         <List>
-          <ListItem
-            button
-            selected={selectedTab === 'pending'}
-            onClick={() => setSelectedTab('pending')}
-          >
-            <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
-            <ListItemText primary="Pending Products" />
+          <ListItem disablePadding>
+            <ListItemButton
+              selected={selectedTab === 'pending'}
+              onClick={() => setSelectedTab('pending')}
+            >
+              <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Pending Products" />
+            </ListItemButton>
           </ListItem>
-          <ListItem
-            button
-            selected={selectedTab === 'approved'}
-            onClick={() => setSelectedTab('approved')}
-          >
-            <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
-            <ListItemText primary="Approved Products" />
+
+          <ListItem disablePadding>
+            <ListItemButton
+              selected={selectedTab === 'approved'}
+              onClick={() => setSelectedTab('approved')}
+            >
+              <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Approved Products" />
+            </ListItemButton>
           </ListItem>
-          <ListItem
-            button
-            onClick={logout}
-          >
-            <LogoutIcon sx={{ mr: 1, color: 'white' }} />
-            <ListItemText primary="Logout" />
+
+          <ListItem disablePadding>
+            <ListItemButton onClick={logout}>
+              <LogoutIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Logout" />
+            </ListItemButton>
           </ListItem>
         </List>
       </Drawer>

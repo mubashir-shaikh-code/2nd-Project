@@ -6,6 +6,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const Navbar = ({ sup }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
@@ -16,6 +17,11 @@ const Navbar = ({ sup }) => {
   const logout = () => {
     dispatch(logoutAction());
     navigate('/');
+  };
+
+  const handleUserPanel = () => {
+    navigate('/user-panel');
+    setDropdownOpen(false);
   };
 
   const renderLinks = () => (
@@ -40,21 +46,37 @@ const Navbar = ({ sup }) => {
   const renderUserInfo = () => {
     if (user) {
       return (
-        <div className="flex items-center gap-4">
-          {user.profilePic && (
-            <img
-              src={user.profilePic}
-              alt="Profile"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          )}
-          <span className="text-sm">{user.username}</span>
-          <button
-            onClick={logout}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+        <div className="relative">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            Logout
-          </button>
+            {user.profilePic && (
+              <img
+                src={user.profilePic}
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            )}
+            <span className="text-sm">{user.username}</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-2 w-36 bg-white text-black rounded shadow-lg z-50">
+              <button
+                onClick={handleUserPanel}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+              >
+                User Panel
+              </button>
+              <button
+                onClick={logout}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -92,7 +114,10 @@ const Navbar = ({ sup }) => {
           {renderLinks()}
           {user ? (
             <li className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
                 {user.profilePic && (
                   <img
                     src={user.profilePic}
@@ -102,12 +127,22 @@ const Navbar = ({ sup }) => {
                 )}
                 <span className="text-sm text-white">{user.username}</span>
               </div>
-              <button
-                onClick={logout}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-              >
-                Logout
-              </button>
+              {dropdownOpen && (
+                <div className="bg-white text-black rounded shadow-lg mt-2 w-36">
+                  <button
+                    onClick={handleUserPanel}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                  >
+                    User Panel
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </li>
           ) : (
             <li>

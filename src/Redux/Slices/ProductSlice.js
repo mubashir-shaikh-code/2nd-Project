@@ -1,7 +1,6 @@
-// src/Redux/Slices/ProductSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// Fetch all approved products (homepage)
+// ✅ Fetch all approved products for homepage
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async () => {
@@ -11,8 +10,7 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// ✅ FIXED: Correct user product fetch URL
-
+// ✅ Fetch products of the currently logged-in user
 export const fetchUserProducts = createAsyncThunk(
   'products/fetchUserProducts',
   async (userEmail) => {
@@ -24,8 +22,7 @@ export const fetchUserProducts = createAsyncThunk(
   }
 );
 
-
-// Post product
+// ✅ Post a new product (with auth token)
 export const postProduct = createAsyncThunk(
   'products/postProduct',
   async ({ payload, token }) => {
@@ -44,17 +41,18 @@ export const postProduct = createAsyncThunk(
   }
 );
 
-// Update product
+// ✅ Update an existing product
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async ({ id, updatedData }) => {
-    const res = await fetch(`https://2nd-project-backend-production.up.railway.app/api/products/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedData),
-    });
+    const res = await fetch(
+      `https://2nd-project-backend-production.up.railway.app/api/products/${id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
+      }
+    );
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Product update failed');
@@ -62,6 +60,7 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
+// ✅ Slice setup
 const productSlice = createSlice({
   name: 'products',
   initialState: {
@@ -73,6 +72,7 @@ const productSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // 🟡 Fetch all approved products
       .addCase(fetchProducts.pending, (state) => {
         state.status = 'loading';
       })
@@ -85,6 +85,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
+      // 🟡 Fetch user-specific products
       .addCase(fetchUserProducts.pending, (state) => {
         state.status = 'loading';
       })
@@ -97,16 +98,17 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
+      // 🟢 Post product
       .addCase(postProduct.fulfilled, (state, action) => {
         state.userProducts.unshift(action.payload);
       })
 
+      // 🟢 Update product
       .addCase(updateProduct.fulfilled, (state, action) => {
-  const updated = action.payload;
-  state.userProducts = state.userProducts.filter((p) => p._id !== updated._id);
-  state.userProducts.unshift(updated);
-});
-
+        const updated = action.payload;
+        state.userProducts = state.userProducts.filter(p => p._id !== updated._id);
+        state.userProducts.unshift(updated);
+      });
   },
 });
 

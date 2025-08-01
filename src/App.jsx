@@ -13,6 +13,7 @@ import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
+import UserPanel from './components/UserPanel'; // ✅ NEW IMPORT
 
 const App = () => {
   const location = useLocation();
@@ -79,6 +80,7 @@ const App = () => {
           }
         />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/user-panel" element={<UserPanel />} /> {/* ✅ NEW ROUTE */}
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}

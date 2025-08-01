@@ -70,10 +70,17 @@ const Login = () => {
         profilePic: null,
         isAdmin: true,
       };
+      // Create a fake JWT with 1 hour expiry
+  const fakeJwt = [
+    btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })),
+    btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })),
+    "signature"
+  ].join('.');
+
 
       dispatch(loginSuccess({ user: adminUser, token: 'admin-token' }));
       localStorage.setItem('user', JSON.stringify(adminUser));
-      localStorage.setItem('token', 'admin-token');
+      localStorage.setItem('token', fakeJwt);
       localStorage.setItem('isAdmin', 'true');
       navigate('/admin');
       return;
