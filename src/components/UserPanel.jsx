@@ -16,9 +16,6 @@ import {
   TableContainer,
   Paper,
   Button,
-  CircularProgress,
-  Snackbar,
-  Alert
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -27,11 +24,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
-
-// Create axios instance with base URL
-const api = axios.create({
-  baseURL: 'https://2nd-project-backend-production.up.railway.app/api',
-});
 
 const drawerWidth = 240;
 
@@ -43,52 +35,40 @@ const UserPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const fetchUserProducts = useCallback(async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
 
       if (!token) {
         throw new Error('Token missing');
       }
 
-      const response = await api.get('/products/user', {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
 
-      const pending = response.data.filter((product) => product.status === 'pending');
-      const approved = response.data.filter((product) => product.status === 'approved');
+      const res = await axios.get(
+        'https://2nd-project-backend-production.up.railway.app/api/products/user',
+        config
+      );
+
+      const pending = res.data.filter((product) => product.status === 'pending');
+      const approved = res.data.filter((product) => product.status === 'approved');
 
       setPendingProducts(pending);
       setApprovedProducts(approved);
+      setErrorMessage(null);
     } catch (error) {
       console.error('Error fetching user products:', error);
-      
-      let errorMessage = 'Failed to fetch your products. Please try again.';
+      setErrorMessage('Failed to fetch your products. Please try again.');
       if (error.response?.status === 401) {
-        errorMessage = 'Session expired. Please login again.';
+        alert('Unauthorized. Please login again.');
         localStorage.clear();
         dispatch(logoutAction());
         navigate('/login');
       }
-
-      setSnackbar({
-        open: true,
-        message: errorMessage,
-        severity: 'error'
-      });
-    } finally {
-      setLoading(false);
     }
   }, [navigate, dispatch]);
 
@@ -115,49 +95,28 @@ const UserPanel = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await api.delete(`/products/${productId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      await axios.delete(
+        `https://2nd-project-backend-production.up.railway.app/api/products/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      
-      setSnackbar({
-        open: true,
-        message: 'Product deleted successfully',
-        severity: 'success'
-      });
-      
-      // Refresh the product list
-      fetchUserProducts();
+      );
+      fetchUserProducts(); // Refresh product list
     } catch (err) {
       console.error('Delete error:', err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to delete product',
-        severity: 'error'
-      });
+      alert('Failed to delete product');
     }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const renderProductTable = (products, isPending) => {
-    if (loading) {
-      return (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <CircularProgress />
-        </Box>
-      );
-    }
-
     if (!products.length) {
-      return <Typography variant="body1" sx={{ mt: 2 }}>No products found.</Typography>;
+      return <Typography>No products found.</Typography>;
     }
 
     return (
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
@@ -174,16 +133,7 @@ const UserPanel = () => {
                 <TableCell>{product.description}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>
-                  <Box display="flex" alignItems="center">
-                    {product.status === 'approved' ? (
-                      <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                    ) : (
-                      <PendingActionsIcon color="warning" sx={{ mr: 1 }} />
-                    )}
-                    {product.status}
-                  </Box>
-                </TableCell>
+                <TableCell>{product.status}</TableCell>
                 {isPending && (
                   <TableCell>
                     <Button
@@ -249,7 +199,7 @@ const UserPanel = () => {
               selected={selectedTab === 'approved'}
               onClick={() => setSelectedTab('approved')}
             >
-              <CheckCircleIcon sx={{ mr:1 , color: 'white' }} />
+              <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Approved Products" />
             </ListItemButton>
           </ListItem>
@@ -263,32 +213,19 @@ const UserPanel = () => {
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mb: 30 }}>
-        <Typography variant="h4" sx={{ mt: 10 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending' ? 'My Pending Products' : 'My Approved Products'}
         </Typography>
 
-        {selectedTab === 'pending' ? (
+        {errorMessage ? (
+          <Typography color="error">{errorMessage}</Typography>
+        ) : selectedTab === 'pending' ? (
           renderProductTable(pendingProducts, true)
         ) : (
           renderProductTable(approvedProducts, false)
         )}
       </Box>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
