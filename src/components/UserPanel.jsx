@@ -213,7 +213,7 @@ const UserPanel = () => {
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, mt:10 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending' ? 'My Pending Products' : 'My Approved Products'}
         </Typography>
