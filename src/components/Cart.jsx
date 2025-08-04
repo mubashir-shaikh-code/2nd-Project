@@ -1,33 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import jwtDecode from 'jwt-decode';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
-  const user = useSelector((state) => state.auth.user);
+  const user = useSelector(state => state.auth.user); // assuming user info stored in Redux
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [userId, setUserId] = useState(null);
-
-  useEffect(() => {
-    if (user?._id) {
-      setUserId(user._id);
-    } else {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          setUserId(decoded?.id || decoded?._id);
-        } catch (err) {
-          console.error('Token decoding failed:', err);
-        }
-      }
-    }
-  }, [user]);
 
   const increment = (index) => {
-    setQuantities((prev) => {
+    setQuantities(prev => {
       const updated = [...prev];
       updated[index] += 1;
       return updated;
@@ -36,7 +18,7 @@ const Cart = ({ cartItems, clear }) => {
 
   const decrement = (index) => {
     if (quantities[index] > 1) {
-      setQuantities((prev) => {
+      setQuantities(prev => {
         const updated = [...prev];
         updated[index] -= 1;
         return updated;
@@ -49,39 +31,32 @@ const Cart = ({ cartItems, clear }) => {
   };
 
   const placeOrder = async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token || !userId) {
-      setMessage('Please login to place an order.');
-      return;
+    if (!user?._id) {
+      return setMessage("Please login to place an order.");
     }
 
     setLoading(true);
     try {
       const orders = cartItems.map((item, i) => ({
         title: item.title,
-        quantity: quantities[i],
+        quantity: quantities[i]
       }));
 
-      const res = await axios.post(
-        'https://2nd-project-backend-production.up.railway.app/api/delivery/cart',
-        { userId, orders },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.post('https://2nd-project-backend-production.up.railway.app/api/orders', {
+  userId: user._id,
+  orders
+});
 
-      if (res.status === 200) {
-        setMessage('✅ Order placed successfully!');
-        clear();
-      } else {
-        setMessage('⚠️ Something went wrong. Try again.');
-      }
+if (res.status === 200) {
+  console.log('Order placed successfully:', res.data);
+}
+
+
+      setMessage('Order placed successfully!');
+      clear(); // clear cart
     } catch (err) {
-      console.error('Order error:', err);
-      setMessage('❌ Failed to place order.');
+      console.error(err);
+      setMessage('Failed to place order.');
     } finally {
       setLoading(false);
     }
