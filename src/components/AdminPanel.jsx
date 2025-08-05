@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box,
   CssBaseline,
@@ -31,15 +31,19 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [selectedTab, setSelectedTab] = useState('pending');
+  const [selectedTab, setSelectedTab] = useState('pendingProducts');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [approvedOrders, setApprovedOrders] = useState([]);
+
+  const token = localStorage.getItem('token');
+  const config = useMemo(() => ({
+    headers: { Authorization: `Bearer ${token}` },
+  }), [token]);
 
   const fetchAllProducts = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       const [approvedRes, pendingRes] = await Promise.all([
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products'),
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products/pending', config),
@@ -55,14 +59,29 @@ const AdminPanel = () => {
         navigate('/login');
       }
     }
-  }, [navigate]);
+  }, [config, navigate]);
+
+  const fetchAllOrders = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        'https://2nd-project-backend-production.up.railway.app/api/order/all',
+        config
+      );
+      const orders = res.data;
+      setPendingOrders(orders.filter((o) => o.status === 'pending'));
+      setApprovedOrders(orders.filter((o) => o.status !== 'pending'));
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  }, [config]);
 
   const approveProduct = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      await axios.patch(`https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`, null, config);
+      await axios.patch(
+        `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
+        null,
+        config
+      );
       fetchAllProducts();
     } catch (err) {
       console.error('Error approving product:', err);
@@ -71,13 +90,27 @@ const AdminPanel = () => {
 
   const rejectProduct = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      await axios.patch(`https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`, null, config);
+      await axios.patch(
+        `https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`,
+        null,
+        config
+      );
       fetchAllProducts();
     } catch (err) {
       console.error('Error rejecting product:', err);
+    }
+  };
+
+  const approveOrder = async (id) => {
+    try {
+      await axios.put(
+        `https://2nd-project-backend-production.up.railway.app/api/order/approve/${id}`,
+        null,
+        config
+      );
+      fetchAllOrders();
+    } catch (error) {
+      console.error('Error approving order:', error);
     }
   };
 
@@ -94,29 +127,38 @@ const AdminPanel = () => {
       return;
     }
     fetchAllProducts();
-  }, [fetchAllProducts, navigate]);
+    fetchAllOrders();
+  }, [fetchAllProducts, fetchAllOrders, navigate]);
 
-  const renderPendingTable = () => (
+  const renderTable = (rows, actions = null) => (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell><strong>Description</strong></TableCell>
-            <TableCell><strong>Price</strong></TableCell>
-            <TableCell><strong>Category</strong></TableCell>
-            <TableCell><strong>Actions</strong></TableCell>
+            <TableCell>User</TableCell>
+            <TableCell>Product</TableCell>
+            <TableCell>Status</TableCell>
+            {actions && <TableCell>Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
-          {pendingProducts.map((product) => (
-            <TableRow key={product._id}>
-              <TableCell>{product.description || 'N/A'}</TableCell>
-              <TableCell>${product.price || '0.00'}</TableCell>
-              <TableCell>{product.category || 'N/A'}</TableCell>
-              <TableCell>
-                <Button variant="contained" color="success" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>Approve</Button>
-                <Button variant="outlined" color="error" size="small" onClick={() => rejectProduct(product._id)}>Reject</Button>
-              </TableCell>
+          {rows.map((order) => (
+            <TableRow key={order._id}>
+              <TableCell>{order.userId?.name || 'N/A'}</TableCell>
+              <TableCell>{order.productId?.name || 'N/A'}</TableCell>
+              <TableCell>{order.status}</TableCell>
+              {actions && (
+                <TableCell>
+                  <Button
+                    color="success"
+                    variant="contained"
+                    size="small"
+                    onClick={() => actions(order._id)}
+                  >
+                    Approve
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -124,28 +166,54 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
-  const renderApprovedTable = () => (
+  const renderProductTable = (products, withActions) => (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell><strong>Description</strong></TableCell>
-            <TableCell><strong>Price</strong></TableCell>
-            <TableCell><strong>Category</strong></TableCell>
+            <TableCell>Description</TableCell>
+            <TableCell>Price</TableCell>
+            <TableCell>Category</TableCell>
+            {withActions && <TableCell>Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
-          {approvedProducts.map((product) => (
+          {products.map((product) => (
             <TableRow key={product._id}>
               <TableCell>{product.description || 'N/A'}</TableCell>
               <TableCell>${product.price || '0.00'}</TableCell>
               <TableCell>{product.category || 'N/A'}</TableCell>
+              {withActions && (
+                <TableCell>
+                  <Button color="success" variant="contained" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>
+                    Approve
+                  </Button>
+                  <Button color="error" variant="outlined" size="small" onClick={() => rejectProduct(product._id)}>
+                    Reject
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </TableContainer>
   );
+
+  const renderContent = () => {
+    switch (selectedTab) {
+      case 'pendingProducts':
+        return renderProductTable(pendingProducts, true);
+      case 'approvedProducts':
+        return renderProductTable(approvedProducts, false);
+      case 'pendingOrders':
+        return renderTable(pendingOrders, approveOrder);
+      case 'approvedOrders':
+        return renderTable(approvedOrders);
+      default:
+        return null;
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -169,22 +237,32 @@ const AdminPanel = () => {
         </Typography>
         <List>
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'pending'} onClick={() => setSelectedTab('pending')}>
-              <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
+            <ListItemButton selected={selectedTab === 'pendingProducts'} onClick={() => setSelectedTab('pendingProducts')}>
+              <PendingActionsIcon sx={{ mr: 1 }} />
               <ListItemText primary="Pending Products" />
             </ListItemButton>
           </ListItem>
-
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'approved'} onClick={() => setSelectedTab('approved')}>
-              <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
+            <ListItemButton selected={selectedTab === 'approvedProducts'} onClick={() => setSelectedTab('approvedProducts')}>
+              <CheckCircleIcon sx={{ mr: 1 }} />
               <ListItemText primary="Approved Products" />
             </ListItemButton>
           </ListItem>
-
+          <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'pendingOrders'} onClick={() => setSelectedTab('pendingOrders')}>
+              <PendingActionsIcon sx={{ mr: 1 }} />
+              <ListItemText primary="Pending Orders" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'approvedOrders'} onClick={() => setSelectedTab('approvedOrders')}>
+              <CheckCircleIcon sx={{ mr: 1 }} />
+              <ListItemText primary="Approved Orders" />
+            </ListItemButton>
+          </ListItem>
           <ListItem disablePadding>
             <ListItemButton onClick={logout}>
-              <LogoutIcon sx={{ mr: 1, color: 'white' }} />
+              <LogoutIcon sx={{ mr: 1 }} />
               <ListItemText primary="Logout" />
             </ListItemButton>
           </ListItem>
@@ -193,10 +271,9 @@ const AdminPanel = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab === 'pending' ? 'Pending Products' : 'Approved Products'}
+          {selectedTab.replace(/([A-Z])/g, ' $1')}
         </Typography>
-
-        {selectedTab === 'pending' ? renderPendingTable() : renderApprovedTable()}
+        {renderContent()}
       </Box>
     </Box>
   );
