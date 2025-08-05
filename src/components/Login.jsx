@@ -5,9 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
 
-const ADMIN_EMAIL = 'admin@liflow.com';
-const ADMIN_PASS = 'admin123';
-
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const [formData, setFormData] = useState({
@@ -20,6 +17,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // 🔁 Session check
   useEffect(() => {
     const checkToken = () => {
       const token = localStorage.getItem('token');
@@ -95,22 +93,19 @@ const Login = () => {
         return;
       }
 
-      // 🟨 Determine if this is admin login (check hardcoded)
-      const isAdminLogin = formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASS;
-
       const user = {
         ...data.user,
         profilePic: data.user.profilePic || formData.profilePic || null,
-        isAdmin: isAdminLogin,
+        isAdmin: data.isAdmin || false,
       };
 
       dispatch(loginSuccess({ user, token: data.token }));
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
-      localStorage.setItem('isAdmin', user.isAdmin.toString());
+      localStorage.setItem('isAdmin', data.isAdmin ? 'true' : 'false');
 
-      // ✅ Redirect based on isAdmin
-      if (user.isAdmin) {
+      // ✅ Redirect admin or normal user
+      if (data.isAdmin) {
         navigate('/admin');
       } else {
         navigate('/home');

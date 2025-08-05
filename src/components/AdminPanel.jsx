@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   CssBaseline,
@@ -16,9 +16,13 @@ import {
   ListItemButton,
   TableContainer,
   Paper,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -31,19 +35,16 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [selectedTab, setSelectedTab] = useState('pendingProducts');
+  const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [pendingOrders, setPendingOrders] = useState([]);
-  const [approvedOrders, setApprovedOrders] = useState([]);
-
-  const token = localStorage.getItem('token');
-  const config = useMemo(() => ({
-    headers: { Authorization: `Bearer ${token}` },
-  }), [token]);
+  const [deliveryOrders, setDeliveryOrders] = useState([]);
 
   const fetchAllProducts = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       const [approvedRes, pendingRes] = await Promise.all([
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products'),
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products/pending', config),
@@ -59,29 +60,26 @@ const AdminPanel = () => {
         navigate('/login');
       }
     }
-  }, [config, navigate]);
+  }, [navigate]);
 
   const fetchAllOrders = useCallback(async () => {
     try {
-      const res = await axios.get(
-        'https://2nd-project-backend-production.up.railway.app/api/order/all',
-        config
-      );
-      const orders = res.data;
-      setPendingOrders(orders.filter((o) => o.status === 'pending'));
-      setApprovedOrders(orders.filter((o) => o.status !== 'pending'));
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/orders', config);
+      setDeliveryOrders(res.data);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching delivery orders:', error);
     }
-  }, [config]);
+  }, []);
 
   const approveProduct = async (id) => {
     try {
-      await axios.patch(
-        `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
-        null,
-        config
-      );
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      await axios.patch(`https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`, null, config);
       fetchAllProducts();
     } catch (err) {
       console.error('Error approving product:', err);
@@ -90,27 +88,25 @@ const AdminPanel = () => {
 
   const rejectProduct = async (id) => {
     try {
-      await axios.patch(
-        `https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`,
-        null,
-        config
-      );
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      await axios.patch(`https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`, null, config);
       fetchAllProducts();
     } catch (err) {
       console.error('Error rejecting product:', err);
     }
   };
 
-  const approveOrder = async (id) => {
+  const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await axios.put(
-        `https://2nd-project-backend-production.up.railway.app/api/order/approve/${id}`,
-        null,
-        config
-      );
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      await axios.put(`https://2nd-project-backend-production.up.railway.app/api/orders/${orderId}`, { status: newStatus }, config);
       fetchAllOrders();
-    } catch (error) {
-      console.error('Error approving order:', error);
+    } catch (err) {
+      console.error('Error updating status:', err);
     }
   };
 
@@ -130,69 +126,27 @@ const AdminPanel = () => {
     fetchAllOrders();
   }, [fetchAllProducts, fetchAllOrders, navigate]);
 
-  const renderTable = (rows, actions = null) => (
+  const renderPendingTable = () => (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>User</TableCell>
-            <TableCell>Product</TableCell>
-            <TableCell>Status</TableCell>
-            {actions && <TableCell>Actions</TableCell>}
+            <TableCell><strong>Description</strong></TableCell>
+            <TableCell><strong>Price</strong></TableCell>
+            <TableCell><strong>Category</strong></TableCell>
+            <TableCell><strong>Actions</strong></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((order) => (
-            <TableRow key={order._id}>
-              <TableCell>{order.userId?.name || 'N/A'}</TableCell>
-              <TableCell>{order.productId?.name || 'N/A'}</TableCell>
-              <TableCell>{order.status}</TableCell>
-              {actions && (
-                <TableCell>
-                  <Button
-                    color="success"
-                    variant="contained"
-                    size="small"
-                    onClick={() => actions(order._id)}
-                  >
-                    Approve
-                  </Button>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  const renderProductTable = (products, withActions) => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Description</TableCell>
-            <TableCell>Price</TableCell>
-            <TableCell>Category</TableCell>
-            {withActions && <TableCell>Actions</TableCell>}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {products.map((product) => (
+          {pendingProducts.map((product) => (
             <TableRow key={product._id}>
               <TableCell>{product.description || 'N/A'}</TableCell>
               <TableCell>${product.price || '0.00'}</TableCell>
               <TableCell>{product.category || 'N/A'}</TableCell>
-              {withActions && (
-                <TableCell>
-                  <Button color="success" variant="contained" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>
-                    Approve
-                  </Button>
-                  <Button color="error" variant="outlined" size="small" onClick={() => rejectProduct(product._id)}>
-                    Reject
-                  </Button>
-                </TableCell>
-              )}
+              <TableCell>
+                <Button variant="contained" color="success" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>Approve</Button>
+                <Button variant="outlined" color="error" size="small" onClick={() => rejectProduct(product._id)}>Reject</Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -200,20 +154,61 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
-  const renderContent = () => {
-    switch (selectedTab) {
-      case 'pendingProducts':
-        return renderProductTable(pendingProducts, true);
-      case 'approvedProducts':
-        return renderProductTable(approvedProducts, false);
-      case 'pendingOrders':
-        return renderTable(pendingOrders, approveOrder);
-      case 'approvedOrders':
-        return renderTable(approvedOrders);
-      default:
-        return null;
-    }
-  };
+  const renderApprovedTable = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Description</strong></TableCell>
+            <TableCell><strong>Price</strong></TableCell>
+            <TableCell><strong>Category</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {approvedProducts.map((product) => (
+            <TableRow key={product._id}>
+              <TableCell>{product.description || 'N/A'}</TableCell>
+              <TableCell>${product.price || '0.00'}</TableCell>
+              <TableCell>{product.category || 'N/A'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  const renderDeliveryOrders = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Product</strong></TableCell>
+            <TableCell><strong>User</strong></TableCell>
+            <TableCell><strong>Status</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {deliveryOrders.map((order) => (
+            <TableRow key={order._id}>
+              <TableCell>{order.productName || 'N/A'}</TableCell>
+              <TableCell>{order.userName || 'N/A'}</TableCell>
+              <TableCell>
+                <RadioGroup
+                  row
+                  value={order.status}
+                  onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                >
+                  <FormControlLabel value="processing" control={<Radio />} label="Processing" />
+                  <FormControlLabel value="dispatched" control={<Radio />} label="Dispatched" />
+                  <FormControlLabel value="delivered" control={<Radio />} label="Delivered" />
+                </RadioGroup>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -237,32 +232,29 @@ const AdminPanel = () => {
         </Typography>
         <List>
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'pendingProducts'} onClick={() => setSelectedTab('pendingProducts')}>
-              <PendingActionsIcon sx={{ mr: 1 }} />
+            <ListItemButton selected={selectedTab === 'pending'} onClick={() => setSelectedTab('pending')}>
+              <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Pending Products" />
             </ListItemButton>
           </ListItem>
+
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'approvedProducts'} onClick={() => setSelectedTab('approvedProducts')}>
-              <CheckCircleIcon sx={{ mr: 1 }} />
+            <ListItemButton selected={selectedTab === 'approved'} onClick={() => setSelectedTab('approved')}>
+              <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Approved Products" />
             </ListItemButton>
           </ListItem>
+
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'pendingOrders'} onClick={() => setSelectedTab('pendingOrders')}>
-              <PendingActionsIcon sx={{ mr: 1 }} />
-              <ListItemText primary="Pending Orders" />
+            <ListItemButton selected={selectedTab === 'delivery'} onClick={() => setSelectedTab('delivery')}>
+              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Delivery Orders" />
             </ListItemButton>
           </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'approvedOrders'} onClick={() => setSelectedTab('approvedOrders')}>
-              <CheckCircleIcon sx={{ mr: 1 }} />
-              <ListItemText primary="Approved Orders" />
-            </ListItemButton>
-          </ListItem>
+
           <ListItem disablePadding>
             <ListItemButton onClick={logout}>
-              <LogoutIcon sx={{ mr: 1 }} />
+              <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
             </ListItemButton>
           </ListItem>
@@ -271,9 +263,18 @@ const AdminPanel = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab.replace(/([A-Z])/g, ' $1')}
+          {selectedTab === 'pending'
+            ? 'Pending Products'
+            : selectedTab === 'approved'
+            ? 'Approved Products'
+            : 'Delivery Orders'}
         </Typography>
-        {renderContent()}
+
+        {selectedTab === 'pending'
+          ? renderPendingTable()
+          : selectedTab === 'approved'
+          ? renderApprovedTable()
+          : renderDeliveryOrders()}
       </Box>
     </Box>
   );
