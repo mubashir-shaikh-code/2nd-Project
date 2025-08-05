@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useSelector } from 'react-redux';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
-  const user = useSelector(state => state.auth.user); // assuming user info stored in Redux
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const increment = (index) => {
@@ -30,31 +26,9 @@ const Cart = ({ cartItems, clear }) => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
 
-  const placeOrder = async () => {
-    if (!user?._id) {
-      return setMessage("Please login to place an order.");
-    }
-
-    setLoading(true);
-    try {
-      const orders = cartItems.map((item, i) => ({
-        title: item.title,
-        quantity: quantities[i]
-      }));
-
-       await axios.post('https://2nd-project-backend-production.up.railway.app/api/orders', {
-        userId: user._id,
-        orders
-      });
-
-      setMessage('Order placed successfully!');
-      clear(); // clear cart
-    } catch (err) {
-      console.error(err);
-      setMessage('Failed to place order.');
-    } finally {
-      setLoading(false);
-    }
+  const placeOrder = () => {
+    // No API call, no logic – this is intentionally empty
+    setMessage("Place Order button clicked (no action attached).");
   };
 
   return (
@@ -113,10 +87,9 @@ const Cart = ({ cartItems, clear }) => {
 
             <button
               onClick={placeOrder}
-              disabled={loading}
               className="mt-6 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
             >
-              {loading ? 'Placing...' : 'Place Order'}
+              Place Order
             </button>
           </div>
         </>
