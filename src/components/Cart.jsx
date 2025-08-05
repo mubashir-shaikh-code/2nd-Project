@@ -4,7 +4,9 @@ import { useSelector } from 'react-redux';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
-  const user = useSelector(state => state.auth.user); // Assuming user has token
+  const user = useSelector(state => state.auth.user);
+  const token = useSelector(state => state.auth.token); // ✅ Get token separately
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -31,7 +33,7 @@ const Cart = ({ cartItems, clear }) => {
   };
 
   const placeOrder = async () => {
-    if (!user?._id || !user?.token) {
+    if (!user?._id || !token) {
       return setMessage("Please login to place an order.");
     }
 
@@ -43,11 +45,11 @@ const Cart = ({ cartItems, clear }) => {
       }));
 
       const res = await axios.post(
-        'https://2nd-project-backend-production.up.railway.app/api/orders/place',
+        'https://2nd-project-backend-production.up.railway.app/api/orders/create-cart-orders',
         { orders },
         {
           headers: {
-            Authorization: `Bearer ${user.token}`
+            Authorization: `Bearer ${token}`
           }
         }
       );
