@@ -20,7 +20,6 @@ import {
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -36,7 +35,6 @@ const UserPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [deliveryOrders, setDeliveryOrders] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const fetchUserProducts = useCallback(async () => {
@@ -69,33 +67,13 @@ const UserPanel = () => {
     }
   }, [dispatch, navigate]);
 
-  const fetchDeliveryOrders = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Token missing');
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      const res = await axios.get(
-        'https://2nd-project-backend-production.up.railway.app/api/delivery/my-orders',
-        config
-      );
-
-      setDeliveryOrders(res.data || []);
-    } catch (error) {
-      console.error('Error fetching delivery orders:', error);
-      setDeliveryOrders([]);
-    }
-  }, []);
-
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchUserProducts();
-    fetchDeliveryOrders();
-  }, [user, navigate, fetchUserProducts, fetchDeliveryOrders]);
+  }, [user, navigate, fetchUserProducts]);
 
   const logout = () => {
     dispatch(logoutAction());
@@ -180,35 +158,6 @@ const UserPanel = () => {
     );
   };
 
-  const renderDeliveryOrdersTable = () => {
-    if (!deliveryOrders.length) {
-      return <Typography>No delivery orders yet.</Typography>;
-    }
-
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Product</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-              <TableCell><strong>Ordered On</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {deliveryOrders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order.productName || order.productId?.title || 'Unnamed'}</TableCell>
-                <TableCell>{order.status}</TableCell>
-                <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
   const renderContent = () => {
     if (errorMessage) {
       return <Typography color="error">{errorMessage}</Typography>;
@@ -218,8 +167,6 @@ const UserPanel = () => {
       return renderProductTable(pendingProducts, true);
     } else if (selectedTab === 'approved') {
       return renderProductTable(approvedProducts, false);
-    } else if (selectedTab === 'orders') {
-      return renderDeliveryOrdersTable();
     }
   };
 
@@ -265,16 +212,6 @@ const UserPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'orders'}
-              onClick={() => setSelectedTab('orders')}
-            >
-              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
-              <ListItemText primary="My Orders" />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -287,9 +224,7 @@ const UserPanel = () => {
         <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending'
             ? 'My Pending Products'
-            : selectedTab === 'approved'
-            ? 'My Approved Products'
-            : 'My Delivery Orders'}
+            : 'My Approved Products'}
         </Typography>
 
         {renderContent()}

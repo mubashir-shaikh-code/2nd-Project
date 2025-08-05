@@ -4,9 +4,7 @@ import { useSelector } from 'react-redux';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
- const user = useSelector(state => state.auth.user) || JSON.parse(localStorage.getItem('user'));
-const token = useSelector(state => state.auth.token) || localStorage.getItem('token'); 
-
+  const user = useSelector(state => state.auth.user); // assuming user info stored in Redux
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -33,7 +31,7 @@ const token = useSelector(state => state.auth.token) || localStorage.getItem('to
   };
 
   const placeOrder = async () => {
-    if (!user?._id || !token) {
+    if (!user?._id) {
       return setMessage("Please login to place an order.");
     }
 
@@ -44,23 +42,13 @@ const token = useSelector(state => state.auth.token) || localStorage.getItem('to
         quantity: quantities[i]
       }));
 
-      const res = await axios.post(
-        'https://2nd-project-backend-production.up.railway.app/api/orders/create-cart-orders',
-        { orders },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+       await axios.post('https://2nd-project-backend-production.up.railway.app/api/orders', {
+        userId: user._id,
+        orders
+      });
 
-      if (res.status === 201) {
-        console.log('Order placed successfully:', res.data);
-        setMessage('Order placed successfully!');
-        clear(); // clear cart
-      } else {
-        setMessage('Failed to place order.');
-      }
+      setMessage('Order placed successfully!');
+      clear(); // clear cart
     } catch (err) {
       console.error(err);
       setMessage('Failed to place order.');
