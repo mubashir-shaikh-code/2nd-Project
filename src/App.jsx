@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
+import { loadUserFromStorage, logout } from './Redux/Slices/AuthSlice'; // ✅ Import
 
 import Login from './components/Login';
 import Navbar from './components/Navbar';
@@ -13,7 +14,7 @@ import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
-import UserPanel from './components/UserPanel'; // ✅ NEW IMPORT
+import UserPanel from './components/UserPanel'; // ✅ Already present
 
 const App = () => {
   const location = useLocation();
@@ -25,25 +26,28 @@ const App = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+
     if (token && typeof token === 'string' && token.split('.').length === 3) {
       try {
         const decoded = jwtDecode(token);
         const isExpired = decoded.exp * 1000 < Date.now();
+
         if (isExpired) {
-          localStorage.clear();
+          dispatch(logout());
           alert('Session expired. Please log in again.');
           navigate('/login');
+        } else {
+          dispatch(loadUserFromStorage()); // ✅ Rehydrate auth state
         }
       } catch (err) {
         console.error('Token decoding failed:', err);
-        localStorage.clear();
+        dispatch(logout());
         navigate('/login');
       }
     } else {
-      // Token is missing or malformed
-      localStorage.clear();
+      dispatch(logout()); // clear Redux + localStorage
     }
-  }, [navigate]);
+  }, [dispatch, navigate]);
 
   const handleAddToCart = (item) => {
     const isLoggedIn = localStorage.getItem('user');
@@ -80,7 +84,7 @@ const App = () => {
           }
         />
         <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/user-panel" element={<UserPanel />} /> {/* ✅ NEW ROUTE */}
+        <Route path="/user-panel" element={<UserPanel />} />
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}
