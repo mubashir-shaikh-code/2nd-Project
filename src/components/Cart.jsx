@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
-  const user = useSelector(state => state.auth.user);
-  const token = useSelector(state => state.auth.token); // ✅ Get token separately
+ const user = useSelector(state => state.auth.user) || JSON.parse(localStorage.getItem('user'));
+const token = useSelector(state => state.auth.token) || localStorage.getItem('token'); 
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
