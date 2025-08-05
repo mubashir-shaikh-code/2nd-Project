@@ -27,7 +27,6 @@ const Cart = ({ cartItems, clear }) => {
   };
 
   const placeOrder = () => {
-    // No API call, no logic – this is intentionally empty
     setMessage("Place Order button clicked (no action attached).");
   };
 
