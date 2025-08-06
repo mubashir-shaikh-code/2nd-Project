@@ -102,7 +102,7 @@ const Login = () => {
       dispatch(loginSuccess({ user, token: data.token }));
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', data.token);
-      localStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
+      localStorage.setItem('isAdmin',user.isAdmin ? 'true' : 'false');
 
       // ✅ Redirect admin or normal user
       if (data.isAdmin) {

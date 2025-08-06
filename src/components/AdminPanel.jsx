@@ -127,6 +127,7 @@ const AdminPanel = () => {
   };
 
   useEffect(() => {
+    localStorage.setItem('token', 'admin-token');
     const isAdmin = localStorage.getItem('isAdmin');
     if (isAdmin !== 'true') {
       navigate('/login');
