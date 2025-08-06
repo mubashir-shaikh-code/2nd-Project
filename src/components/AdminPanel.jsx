@@ -30,7 +30,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 import {
   fetchAllOrders,
   updateOrderStatus,
-} from '../features/orders/ordersSlice'; // ✅ Redux actions
+} from '../Redux/Slices/OrderSlice'; // ✅ Redux actions
 
 const drawerWidth = 240;
 
