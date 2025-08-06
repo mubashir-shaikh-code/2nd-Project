@@ -29,9 +29,10 @@ const Cart = ({ cartItems, clear }) => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
 
-  const handlePlaceOrder = async () => {
-    const token = localStorage.getItem('token');
+ const handlePlaceOrder = async () => {
+  const token = localStorage.getItem('token');
 
+  try {
     for (let i = 0; i < cartItems.length; i++) {
       const orderData = {
         productId: cartItems[i]._id,
@@ -43,7 +44,12 @@ const Cart = ({ cartItems, clear }) => {
 
     setOrderPlaced(true);
     clear();
-  };
+  } catch (error) {
+    console.error('❌ Order placement failed:', error);
+    alert('Something went wrong while placing your order. Please try again.');
+  }
+};
+
 
   return (
     <div className="min-h-screen px-4 pt-32 pb-16 text-center">
