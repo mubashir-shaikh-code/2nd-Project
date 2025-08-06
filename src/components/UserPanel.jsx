@@ -20,8 +20,6 @@ import {
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -37,7 +35,6 @@ const UserPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [userOrders, setUserOrders] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const handleAuthError = useCallback(
@@ -56,6 +53,8 @@ const UserPanel = () => {
   const fetchUserProducts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error('Token missing');
+
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const res = await axios.get(
@@ -74,35 +73,13 @@ const UserPanel = () => {
     }
   }, [handleAuthError]);
 
-  const fetchUserOrders = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      const res = await axios.get(
-        `https://2nd-project-backend-production.up.railway.app/api/orders/user/${user._id}`,
-        config
-      );
-
-      setUserOrders(res.data);
-    } catch (error) {
-      console.error('Order fetch error:', error);
-      handleAuthError(error);
-    }
-  }, [user, handleAuthError]);
-
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-
-    if (selectedTab === 'pending' || selectedTab === 'approved') {
-      fetchUserProducts();
-    } else if (selectedTab === 'orders') {
-      fetchUserOrders();
-    }
-  }, [user, selectedTab, fetchUserProducts, fetchUserOrders, navigate]);
+    fetchUserProducts();
+  }, [user, fetchUserProducts, navigate]);
 
   const logout = () => {
     dispatch(logoutAction());
@@ -122,7 +99,9 @@ const UserPanel = () => {
       await axios.delete(
         `https://2nd-project-backend-production.up.railway.app/api/products/${productId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       fetchUserProducts();
@@ -133,7 +112,9 @@ const UserPanel = () => {
   };
 
   const renderProductTable = (products, isPending) => {
-    if (!products.length) return <Typography>No products found.</Typography>;
+    if (!products.length) {
+      return <Typography>No products found.</Typography>;
+    }
 
     return (
       <TableContainer component={Paper}>
@@ -183,39 +164,16 @@ const UserPanel = () => {
     );
   };
 
-  const renderOrdersTable = () => {
-    if (!userOrders.length) return <Typography>No orders found.</Typography>;
-
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Product</strong></TableCell>
-              <TableCell><strong>Price</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {userOrders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order.title}</TableCell>
-                <TableCell>${order.price}</TableCell>
-                <TableCell>{order.status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
   const renderContent = () => {
-    if (errorMessage) return <Typography color="error">{errorMessage}</Typography>;
+    if (errorMessage) {
+      return <Typography color="error">{errorMessage}</Typography>;
+    }
 
-    if (selectedTab === 'pending') return renderProductTable(pendingProducts, true);
-    if (selectedTab === 'approved') return renderProductTable(approvedProducts, false);
-    if (selectedTab === 'orders') return renderOrdersTable();
+    if (selectedTab === 'pending') {
+      return renderProductTable(pendingProducts, true);
+    } else if (selectedTab === 'approved') {
+      return renderProductTable(approvedProducts, false);
+    }
   };
 
   return (
@@ -260,16 +218,6 @@ const UserPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'orders'}
-              onClick={() => setSelectedTab('orders')}
-            >
-              <ShoppingBagIcon sx={{ mr: 1, color: 'white' }} />
-              <ListItemText primary="My Orders" />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -282,9 +230,7 @@ const UserPanel = () => {
         <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending'
             ? 'My Pending Products'
-            : selectedTab === 'approved'
-            ? 'My Approved Products'
-            : 'My Orders'}
+            : 'My Approved Products'}
         </Typography>
 
         {renderContent()}
