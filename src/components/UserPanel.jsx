@@ -19,11 +19,13 @@ import {
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
+import { fetchUserOrders } from '../features/orders/ordersSlice'; // ✅ Import Redux action
 
 const drawerWidth = 240;
 
@@ -31,6 +33,7 @@ const UserPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const orders = useSelector((state) => state.orders.userOrders); // ✅ Redux state
 
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
@@ -73,13 +76,21 @@ const UserPanel = () => {
     }
   }, [handleAuthError]);
 
+  const fetchOrders = useCallback(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      dispatch(fetchUserOrders(token)); // ✅ Fetch orders via Redux
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchUserProducts();
-  }, [user, fetchUserProducts, navigate]);
+    fetchOrders(); // ✅ Load orders on mount
+  }, [user, fetchUserProducts, fetchOrders, navigate]);
 
   const logout = () => {
     dispatch(logoutAction());
@@ -164,6 +175,35 @@ const UserPanel = () => {
     );
   };
 
+  const renderOrdersTable = () => {
+    if (!orders.length) {
+      return <Typography>No orders found.</Typography>;
+    }
+
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Product</strong></TableCell>
+              <TableCell><strong>Price</strong></TableCell>
+              <TableCell><strong>Status</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order._id}>
+                <TableCell>{order.product.name}</TableCell>
+                <TableCell>${order.price}</TableCell>
+                <TableCell>{order.status}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
   const renderContent = () => {
     if (errorMessage) {
       return <Typography color="error">{errorMessage}</Typography>;
@@ -173,6 +213,8 @@ const UserPanel = () => {
       return renderProductTable(pendingProducts, true);
     } else if (selectedTab === 'approved') {
       return renderProductTable(approvedProducts, false);
+    } else if (selectedTab === 'orders') {
+      return renderOrdersTable();
     }
   };
 
@@ -218,6 +260,16 @@ const UserPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
+            <ListItemButton
+              selected={selectedTab === 'orders'}
+              onClick={() => setSelectedTab('orders')}
+            >
+              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="My Orders" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -226,15 +278,18 @@ const UserPanel = () => {
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 10 }}>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab === 'pending'
-            ? 'My Pending Products'
-            : 'My Approved Products'}
-        </Typography>
+    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 10 }}>
+  <Typography variant="h4" sx={{ mb: 2 }}>
+    {selectedTab === 'pending'
+      ? 'My Pending Products'
+      : selectedTab === 'approved'
+      ? 'My Approved Products'
+      : 'My Orders'}
+  </Typography>
 
-        {renderContent()}
-      </Box>
+  {renderContent()}
+</Box>
+
     </Box>
   );
 };

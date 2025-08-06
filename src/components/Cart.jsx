@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const increment = (index) => {
     setQuantities((prev) => {
@@ -25,10 +26,20 @@ const Cart = ({ cartItems, clear }) => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
 
+  const placeOrder = () => {
+    setOrderPlaced(true);
+    clear();
+  };
+
   return (
     <div className="min-h-screen px-4 pt-32 pb-16 text-center">
       <h1 className="text-4xl font-bold mb-6">Cart</h1>
-      {cartItems.length === 0 ? (
+
+      {orderPlaced ? (
+        <div className="text-green-600 text-2xl font-semibold">
+          🎉 Order placed successfully! HOOORRAAYY! 🎉
+        </div>
+      ) : cartItems.length === 0 ? (
         <p className="text-xl text-gray-600">Your cart is empty</p>
       ) : (
         <>
@@ -44,7 +55,9 @@ const Cart = ({ cartItems, clear }) => {
                 className="w-10 h-10 object-cover rounded"
               />
               <span className="hidden sm:inline w-32 truncate">{item.title}</span>
-              <span className="w-24 text-sm">${(item.price * quantities[index]).toFixed(2)}</span>
+              <span className="w-24 text-sm">
+                ${(item.price * quantities[index]).toFixed(2)}
+              </span>
 
               <div className="flex items-center gap-2">
                 <button
@@ -72,9 +85,15 @@ const Cart = ({ cartItems, clear }) => {
           <div className="flex justify-center gap-4 mt-6">
             <button
               onClick={clear}
-              className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded cursor-pointer"
             >
               Clear Cart
+            </button>
+            <button
+              onClick={placeOrder}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
+            >
+              Place Order
             </button>
           </div>
         </>

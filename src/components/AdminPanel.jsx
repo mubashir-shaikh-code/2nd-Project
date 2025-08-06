@@ -16,14 +16,21 @@ import {
   ListItemButton,
   TableContainer,
   Paper,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
+import {
+  fetchAllOrders,
+  updateOrderStatus,
+} from '../features/orders/ordersSlice'; // ✅ Redux actions
 
 const drawerWidth = 240;
 
@@ -33,6 +40,8 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
+  const orders = useSelector((state) => state.orders.adminOrders); // ✅ Redux state
+  const [statusMap, setStatusMap] = useState({});
 
   const fetchAllProducts = useCallback(async () => {
     try {
@@ -58,23 +67,29 @@ const AdminPanel = () => {
     }
   }, [navigate]);
 
-  const approveProduct = async (id) => {
-  try {
-    await axios.patch(
-      `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
-      null,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      }
-    );
-    fetchAllProducts();
-  } catch (err) {
-    console.error('Error approving product:', err);
-  }
-};
+  const fetchOrders = useCallback(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      dispatch(fetchAllOrders(token)); // ✅ Fetch orders
+    }
+  }, [dispatch]);
 
+  const approveProduct = async (id) => {
+    try {
+      await axios.patch(
+        `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      fetchAllProducts();
+    } catch (err) {
+      console.error('Error approving product:', err);
+    }
+  };
 
   const rejectProduct = async (id) => {
     try {
@@ -93,6 +108,18 @@ const AdminPanel = () => {
     }
   };
 
+  const handleStatusChange = (orderId, status) => {
+    setStatusMap((prev) => ({ ...prev, [orderId]: status }));
+  };
+
+  const handleUpdateStatus = (orderId) => {
+    const token = localStorage.getItem('token');
+    const status = statusMap[orderId];
+    if (status) {
+      dispatch(updateOrderStatus({ orderId, status, token }));
+    }
+  };
+
   const logout = () => {
     dispatch(logoutAction());
     localStorage.clear();
@@ -106,7 +133,8 @@ const AdminPanel = () => {
       return;
     }
     fetchAllProducts();
-  }, [fetchAllProducts, navigate]);
+    fetchOrders(); // ✅ Load orders
+  }, [fetchAllProducts, fetchOrders, navigate]);
 
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
@@ -174,6 +202,51 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
+  const renderOrdersTable = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Product</strong></TableCell>
+            <TableCell><strong>Price</strong></TableCell>
+            <TableCell><strong>User</strong></TableCell>
+            <TableCell><strong>Status</strong></TableCell>
+            <TableCell><strong>Action</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow key={order._id}>
+              <TableCell>{order.product.name}</TableCell>
+              <TableCell>${order.price}</TableCell>
+              <TableCell>{order.user.username}</TableCell>
+              <TableCell>
+                <Select
+                  value={statusMap[order._id] || order.status}
+                  onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                  size="small"
+                >
+                  <MenuItem value="Processing">Processing</MenuItem>
+                  <MenuItem value="Dispatched">Dispatched</MenuItem>
+                  <MenuItem value="Delivered">Delivered</MenuItem>
+                </Select>
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => handleUpdateStatus(order._id)}
+                >
+                  Update
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -216,6 +289,16 @@ const AdminPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
+            <ListItemButton
+              selected={selectedTab === 'orders'}
+              onClick={() => setSelectedTab('orders')}
+            >
+              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Delivery Orders" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -226,9 +309,18 @@ const AdminPanel = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab === 'pending' ? 'Pending Products' : 'Approved Products'}
+          {selectedTab === 'pending'
+            ? 'Pending Products'
+            : selectedTab === 'approved'
+            ? 'Approved Products'
+            : 'Delivery Orders'}
         </Typography>
-        {selectedTab === 'pending' ? renderPendingTable() : renderApprovedTable()}
+
+        {selectedTab === 'pending'
+          ? renderPendingTable()
+          : selectedTab === 'approved'
+          ? renderApprovedTable()
+          : renderOrdersTable()}
       </Box>
     </Box>
   );
