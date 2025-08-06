@@ -80,7 +80,7 @@ const UserPanel = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const res = await axios.get(
-        `https://2nd-project-backend-production.up.railway.app/api/auth/orders/user/${user._id}`,
+        `https://2nd-project-backend-production.up.railway.app/api/orders/user/${user._id}`,
         config
       );
 
