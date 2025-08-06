@@ -217,9 +217,9 @@ const AdminPanel = () => {
         <TableBody>
           {orders.map((order) => (
             <TableRow key={order._id}>
-              <TableCell>{order.product.name}</TableCell>
+              <TableCell>{order.product.description || 'N/A'}</TableCell>
               <TableCell>${order.price}</TableCell>
-              <TableCell>{order.user.username}</TableCell>
+              <TableCell>{order.user?.username || 'Unknown'}</TableCell>
               <TableCell>
                 <Select
                   value={statusMap[order._id] || order.status}

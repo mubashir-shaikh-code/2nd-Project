@@ -193,7 +193,7 @@ const UserPanel = () => {
           <TableBody>
             {orders.map((order) => (
               <TableRow key={order._id}>
-                <TableCell>{order.product.name}</TableCell>
+                <TableCell>{order.product?.description}</TableCell>
                 <TableCell>${order.price}</TableCell>
                 <TableCell>{order.status}</TableCell>
               </TableRow>
