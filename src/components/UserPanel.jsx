@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +35,6 @@ const UserPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const handleAuthError = useCallback(
@@ -75,31 +73,13 @@ const UserPanel = () => {
     }
   }, [handleAuthError]);
 
-  const fetchUserOrders = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      const res = await axios.get(
-        'https://2nd-project-backend-production.up.railway.app/api/orders/user',
-        config
-      );
-
-      setOrders(res.data);
-    } catch (error) {
-      setErrorMessage('Failed to fetch your orders.');
-      handleAuthError(error);
-    }
-  }, [handleAuthError]);
-
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchUserProducts();
-    fetchUserOrders();
-  }, [user, fetchUserProducts, fetchUserOrders, navigate]);
+  }, [user, fetchUserProducts, navigate]);
 
   const logout = () => {
     dispatch(logoutAction());
@@ -184,33 +164,6 @@ const UserPanel = () => {
     );
   };
 
-  const renderOrdersTable = () => {
-    if (!orders.length) return <Typography>No orders found.</Typography>;
-
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Product</strong></TableCell>
-              <TableCell><strong>Quantity</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {orders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order?.productId?.description || 'N/A'}</TableCell>
-                <TableCell>{order.quantity}</TableCell>
-                <TableCell>{order.status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
   const renderContent = () => {
     if (errorMessage) {
       return <Typography color="error">{errorMessage}</Typography>;
@@ -220,8 +173,6 @@ const UserPanel = () => {
       return renderProductTable(pendingProducts, true);
     } else if (selectedTab === 'approved') {
       return renderProductTable(approvedProducts, false);
-    } else if (selectedTab === 'orders') {
-      return renderOrdersTable();
     }
   };
 
@@ -267,16 +218,6 @@ const UserPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'orders'}
-              onClick={() => setSelectedTab('orders')}
-            >
-              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
-              <ListItemText primary="My Orders" />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -289,9 +230,7 @@ const UserPanel = () => {
         <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending'
             ? 'My Pending Products'
-            : selectedTab === 'approved'
-            ? 'My Approved Products'
-            : 'My Orders'}
+            : 'My Approved Products'}
         </Typography>
 
         {renderContent()}

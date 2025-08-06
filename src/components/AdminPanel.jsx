@@ -16,13 +16,9 @@ import {
   ListItemButton,
   TableContainer,
   Paper,
-  RadioGroup,
-  Radio,
-  FormControlLabel,
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +34,6 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const [deliveryOrders, setDeliveryOrders] = useState([]);
 
   const fetchAllProducts = useCallback(async () => {
     try {
@@ -61,18 +56,6 @@ const AdminPanel = () => {
       }
     }
   }, [navigate]);
-
-  const fetchAllOrders = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/orders', config);
-      setDeliveryOrders(res.data);
-    } catch (error) {
-      console.error('Error fetching delivery orders:', error);
-    }
-  }, []);
 
   const approveProduct = async (id) => {
     try {
@@ -98,18 +81,6 @@ const AdminPanel = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      await axios.put(`https://2nd-project-backend-production.up.railway.app/api/orders/${orderId}`, { status: newStatus }, config);
-      fetchAllOrders();
-    } catch (err) {
-      console.error('Error updating status:', err);
-    }
-  };
-
   const logout = () => {
     dispatch(logoutAction());
     localStorage.clear();
@@ -123,8 +94,7 @@ const AdminPanel = () => {
       return;
     }
     fetchAllProducts();
-    fetchAllOrders();
-  }, [fetchAllProducts, fetchAllOrders, navigate]);
+  }, [fetchAllProducts, navigate]);
 
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
@@ -177,39 +147,6 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
-  const renderDeliveryOrders = () => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell><strong>Product</strong></TableCell>
-            <TableCell><strong>User</strong></TableCell>
-            <TableCell><strong>Status</strong></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {deliveryOrders.map((order) => (
-            <TableRow key={order._id}>
-              <TableCell>{order.productName || 'N/A'}</TableCell>
-              <TableCell>{order.userName || 'N/A'}</TableCell>
-              <TableCell>
-                <RadioGroup
-                  row
-                  value={order.status}
-                  onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                >
-                  <FormControlLabel value="processing" control={<Radio />} label="Processing" />
-                  <FormControlLabel value="dispatched" control={<Radio />} label="Dispatched" />
-                  <FormControlLabel value="delivered" control={<Radio />} label="Delivered" />
-                </RadioGroup>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -246,13 +183,6 @@ const AdminPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton selected={selectedTab === 'delivery'} onClick={() => setSelectedTab('delivery')}>
-              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
-              <ListItemText primary="Delivery Orders" />
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -265,16 +195,12 @@ const AdminPanel = () => {
         <Typography variant="h4" sx={{ mb: 2 }}>
           {selectedTab === 'pending'
             ? 'Pending Products'
-            : selectedTab === 'approved'
-            ? 'Approved Products'
-            : 'Delivery Orders'}
+            : 'Approved Products'}
         </Typography>
 
         {selectedTab === 'pending'
           ? renderPendingTable()
-          : selectedTab === 'approved'
-          ? renderApprovedTable()
-          : renderDeliveryOrders()}
+          : renderApprovedTable()}
       </Box>
     </Box>
   );
