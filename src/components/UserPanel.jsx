@@ -25,7 +25,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
-import { fetchUserOrders } from '../features/orders/ordersSlice'; // ✅ Import Redux action
+import { fetchUserOrders } from '../Redux/Slices/OrderSlice'; // ✅ Import Redux action
 
 const drawerWidth = 240;
 
