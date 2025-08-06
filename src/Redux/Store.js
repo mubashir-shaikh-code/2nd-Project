@@ -2,7 +2,7 @@
   import productReducer from './Slices/ProductSlice';
   import cartReducer from './Slices/CartSlice';
   import authReducer from './Slices/AuthSlice';
-  import ordersReducer from '../Redux/Slices/OrdersSlice';
+  import ordersReducer from '../Redux/Slices/OrderSlice';
 
   const Store = configureStore({
     reducer: {
