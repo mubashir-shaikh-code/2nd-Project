@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { placeOrder } from '../Redux/Slices/OrderSlice'; // adjust path if different
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
+  const [message, setMessage] = useState('');
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user); // assuming auth slice has user
 
   const increment = (index) => {
     setQuantities((prev) => {
@@ -25,9 +30,34 @@ const Cart = ({ cartItems, clear }) => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
 
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      setMessage('Please log in to place an order.');
+      return;
+    }
+
+    try {
+      const orderItems = cartItems.map((item, i) => ({
+        _id: item._id,
+        title: item.title,
+        price: item.price * quantities[i],
+      }));
+
+      await dispatch(placeOrder({ cartItems: orderItems, userId: user._id }));
+      clear();
+      setQuantities([]);
+      setMessage('Order placed successfully!');
+    } catch {
+      setMessage('Failed to place order. Try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 pt-32 pb-16 text-center">
       <h1 className="text-4xl font-bold mb-6">Cart</h1>
+
+      {message && <p className="text-lg text-green-600 mb-4">{message}</p>}
+
       {cartItems.length === 0 ? (
         <p className="text-xl text-gray-600">Your cart is empty</p>
       ) : (
@@ -44,7 +74,9 @@ const Cart = ({ cartItems, clear }) => {
                 className="w-10 h-10 object-cover rounded"
               />
               <span className="hidden sm:inline w-32 truncate">{item.title}</span>
-              <span className="w-24 text-sm">${(item.price * quantities[index]).toFixed(2)}</span>
+              <span className="w-24 text-sm">
+                ${(item.price * quantities[index]).toFixed(2)}
+              </span>
 
               <div className="flex items-center gap-2">
                 <button
@@ -69,12 +101,19 @@ const Cart = ({ cartItems, clear }) => {
             <p>Total Price: <strong>${total().toFixed(2)}</strong></p>
           </div>
 
-          <div className="flex justify-center gap-4 mt-6">
+          <div className="flex flex-col items-center gap-4 mt-6">
             <button
               onClick={clear}
-              className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded cursor-pointer"
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded cursor-pointer"
             >
               Clear Cart
+            </button>
+
+            <button
+              onClick={handlePlaceOrder}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
+            >
+              Place Order
             </button>
           </div>
         </>

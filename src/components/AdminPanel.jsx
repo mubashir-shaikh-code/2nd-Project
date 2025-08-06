@@ -16,9 +16,13 @@ import {
   ListItemButton,
   TableContainer,
   Paper,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +38,8 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [statusUpdates, setStatusUpdates] = useState({});
 
   const fetchAllProducts = useCallback(async () => {
     try {
@@ -56,6 +62,15 @@ const AdminPanel = () => {
       }
     }
   }, [navigate]);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/orders');
+      setOrders(res.data);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    }
+  }, []);
 
   const approveProduct = async (id) => {
     try {
@@ -81,6 +96,28 @@ const AdminPanel = () => {
     }
   };
 
+  const handleStatusChange = (orderId, status) => {
+    setStatusUpdates((prev) => ({
+      ...prev,
+      [orderId]: status,
+    }));
+  };
+
+  const updateOrderStatus = async (orderId) => {
+    try {
+      const newStatus = statusUpdates[orderId];
+      if (!newStatus) return;
+
+      await axios.patch(`https://2nd-project-backend-production.up.railway.app/api/orders/${orderId}/status`, {
+        status: newStatus,
+      });
+
+      fetchOrders();
+    } catch (err) {
+      console.error('Error updating order status:', err);
+    }
+  };
+
   const logout = () => {
     dispatch(logoutAction());
     localStorage.clear();
@@ -94,7 +131,8 @@ const AdminPanel = () => {
       return;
     }
     fetchAllProducts();
-  }, [fetchAllProducts, navigate]);
+    fetchOrders();
+  }, [fetchAllProducts, fetchOrders, navigate]);
 
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
@@ -147,6 +185,64 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
+  const renderOrdersTable = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Product</strong></TableCell>
+            <TableCell><strong>Price</strong></TableCell>
+            <TableCell><strong>User</strong></TableCell>
+            <TableCell><strong>Status</strong></TableCell>
+            <TableCell><strong>Action</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow key={order._id}>
+              <TableCell>{order.product?.name || 'N/A'}</TableCell>
+              <TableCell>${order.product?.price?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell>{order.user?.username || 'N/A'}</TableCell>
+              <TableCell>
+                <RadioGroup
+                  row
+                  value={statusUpdates[order._id] || order.status}
+                  onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                >
+                  <FormControlLabel value="Processing" control={<Radio />} label="Processing" />
+                  <FormControlLabel value="Dispatched" control={<Radio />} label="Dispatched" />
+                  <FormControlLabel value="Delivered" control={<Radio />} label="Delivered" />
+                </RadioGroup>
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => updateOrderStatus(order._id)}
+                >
+                  Update
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  const renderContent = () => {
+    switch (selectedTab) {
+      case 'pending':
+        return renderPendingTable();
+      case 'approved':
+        return renderApprovedTable();
+      case 'orders':
+        return renderOrdersTable();
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -183,6 +279,13 @@ const AdminPanel = () => {
           </ListItem>
 
           <ListItem disablePadding>
+            <ListItemButton selected={selectedTab === 'orders'} onClick={() => setSelectedTab('orders')}>
+              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+              <ListItemText primary="Delivery Orders" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
@@ -193,14 +296,11 @@ const AdminPanel = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab === 'pending'
-            ? 'Pending Products'
-            : 'Approved Products'}
+          {selectedTab === 'pending' && 'Pending Products'}
+          {selectedTab === 'approved' && 'Approved Products'}
+          {selectedTab === 'orders' && 'Delivery Orders'}
         </Typography>
-
-        {selectedTab === 'pending'
-          ? renderPendingTable()
-          : renderApprovedTable()}
+        {renderContent()}
       </Box>
     </Box>
   );
