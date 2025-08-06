@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { placeOrder } from '../Redux/Slices/OrderSlice';
 
 const Cart = ({ cartItems, clear }) => {
   const [quantities, setQuantities] = useState(cartItems.map(() => 1));
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const dispatch = useDispatch();
 
   const increment = (index) => {
     setQuantities((prev) => {
@@ -26,7 +29,18 @@ const Cart = ({ cartItems, clear }) => {
     return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
   };
 
-  const placeOrder = () => {
+  const handlePlaceOrder = async () => {
+    const token = localStorage.getItem('token');
+
+    for (let i = 0; i < cartItems.length; i++) {
+      const orderData = {
+        productId: cartItems[i]._id,
+        price: cartItems[i].price * quantities[i],
+      };
+
+      await dispatch(placeOrder({ orderData, token }));
+    }
+
     setOrderPlaced(true);
     clear();
   };
@@ -90,7 +104,7 @@ const Cart = ({ cartItems, clear }) => {
               Clear Cart
             </button>
             <button
-              onClick={placeOrder}
+              onClick={handlePlaceOrder}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
             >
               Place Order
