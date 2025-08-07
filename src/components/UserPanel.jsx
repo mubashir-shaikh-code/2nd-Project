@@ -183,10 +183,12 @@ const UserPanel = () => {
     );
   };
 
-  const renderOrdersTable = () => {
-    if (!orders.length) {
-      return <Typography>No orders found.</Typography>;
-    }
+const renderOrdersTable = () => {
+  const visibleOrders = orders.filter(order => !order.cancelApproved);
+
+  if (!visibleOrders.length) {
+    return <Typography>No orders found.</Typography>;
+  }
 
     return (
       <TableContainer component={Paper}>

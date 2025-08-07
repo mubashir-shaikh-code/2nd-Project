@@ -1,4 +1,3 @@
-// All imports remain unchanged
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -192,7 +191,10 @@ const AdminPanel = () => {
     </TableContainer>
   );
 
-  const renderOrdersTable = () => (
+  const renderOrdersTable = () => {
+  const visibleOrders = orders.filter(order => !order.cancelApproved);
+
+  return (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -206,7 +208,7 @@ const AdminPanel = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {orders.map((order) => (
+          {visibleOrders.map((order) => (
             <TableRow key={order._id}>
               <TableCell>{order.product.description}</TableCell>
               <TableCell>${order.price}</TableCell>
@@ -229,7 +231,7 @@ const AdminPanel = () => {
                 </Button>
               </TableCell>
               <TableCell>
-                {order.cancellationRequested ? (
+                {order.cancelRequest ? (
                   <>
                     <Button
                       variant="outlined"
@@ -259,6 +261,7 @@ const AdminPanel = () => {
       </Table>
     </TableContainer>
   );
+};
 
   return (
     <Box sx={{ display: 'flex' }}>
