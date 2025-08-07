@@ -1,55 +1,55 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { placeOrder } from '../Redux/Slices/OrderSlice';
+import { removeFromCart, addToCart } from '../Redux/Slices/CartSlice';
 
-const Cart = ({ cartItems, clear }) => {
-  const [quantities, setQuantities] = useState(cartItems.map(() => 1));
-  const [orderPlaced, setOrderPlaced] = useState(false);
+const Cart = ({ clear }) => {
   const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const [orderPlaced, setOrderPlaced] = React.useState(false);
 
-  const increment = (index) => {
-    setQuantities((prev) => {
-      const updated = [...prev];
-      updated[index] += 1;
-      return updated;
-    });
+  const increment = (item) => {
+    dispatch(addToCart(item));
   };
 
-  const decrement = (index) => {
-    if (quantities[index] > 1) {
-      setQuantities((prev) => {
-        const updated = [...prev];
-        updated[index] -= 1;
-        return updated;
+  const decrement = (item) => {
+    if (item.quantity > 1) {
+      dispatch({
+        type: 'cart/removeFromCart',
+        payload: item._id,
       });
+      for (let i = 0; i < item.quantity - 1; i++) {
+        dispatch(addToCart(item));
+      }
+    } else {
+      dispatch(removeFromCart(item._id));
     }
   };
 
   const total = () => {
-    return cartItems.reduce((acc, item, i) => acc + item.price * quantities[i], 0);
+    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   };
 
- const handlePlaceOrder = async () => {
-  const token = localStorage.getItem('token');
+  const handlePlaceOrder = async () => {
+    const token = localStorage.getItem('token');
 
-  try {
-    for (let i = 0; i < cartItems.length; i++) {
-      const orderData = {
-        productId: cartItems[i]._id,
-        price: cartItems[i].price * quantities[i],
-      };
+    try {
+      for (let i = 0; i < cartItems.length; i++) {
+        const orderData = {
+          productId: cartItems[i]._id,
+          price: cartItems[i].price * cartItems[i].quantity,
+        };
 
-      await dispatch(placeOrder({ orderData, token }));
+        await dispatch(placeOrder({ orderData, token }));
+      }
+
+      setOrderPlaced(true);
+      clear();
+    } catch (error) {
+      console.error('❌ Order placement failed:', error);
+      alert('Something went wrong while placing your order. Please try again.');
     }
-
-    setOrderPlaced(true);
-    clear();
-  } catch (error) {
-    console.error('❌ Order placement failed:', error);
-    alert('Something went wrong while placing your order. Please try again.');
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen px-4 pt-32 pb-16 text-center">
@@ -76,19 +76,19 @@ const Cart = ({ cartItems, clear }) => {
               />
               <span className="hidden sm:inline w-32 truncate">{item.title}</span>
               <span className="w-24 text-sm">
-                ${(item.price * quantities[index]).toFixed(2)}
+                ${(item.price * item.quantity).toFixed(2)}
               </span>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => decrement(index)}
+                  onClick={() => decrement(item)}
                   className="bg-black text-white w-8 h-8 rounded-full"
                 >
                   -
                 </button>
-                <span>{quantities[index]}</span>
+                <span>{item.quantity}</span>
                 <button
-                  onClick={() => increment(index)}
+                  onClick={() => increment(item)}
                   className="bg-black text-white w-8 h-8 rounded-full"
                 >
                   +

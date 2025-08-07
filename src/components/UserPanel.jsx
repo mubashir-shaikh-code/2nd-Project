@@ -17,15 +17,18 @@ import {
   Paper,
   Button,
 } from '@mui/material';
+import axios from 'axios';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
-import { fetchUserOrders } from '../Redux/Slices/OrderSlice'; // ✅ Import Redux action
+import {
+  fetchUserOrders,
+  requestOrderCancellation,
+} from '../Redux/Slices/OrderSlice'; // ✅ Import Redux actions
 
 const drawerWidth = 240;
 
@@ -33,7 +36,7 @@ const UserPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const orders = useSelector((state) => state.orders.userOrders); // ✅ Redux state
+  const orders = useSelector((state) => state.orders.userOrders);
 
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
@@ -79,7 +82,7 @@ const UserPanel = () => {
   const fetchOrders = useCallback(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      dispatch(fetchUserOrders(token)); // ✅ Fetch orders via Redux
+      dispatch(fetchUserOrders(token));
     }
   }, [dispatch]);
 
@@ -89,7 +92,7 @@ const UserPanel = () => {
       return;
     }
     fetchUserProducts();
-    fetchOrders(); // ✅ Load orders on mount
+    fetchOrders();
   }, [user, fetchUserProducts, fetchOrders, navigate]);
 
   const logout = () => {
@@ -120,6 +123,11 @@ const UserPanel = () => {
       console.error('Delete error:', err);
       alert('Failed to delete product');
     }
+  };
+
+  const handleCancelRequest = (orderId) => {
+    const token = localStorage.getItem('token');
+    dispatch(requestOrderCancellation({ orderId, token }));
   };
 
   const renderProductTable = (products, isPending) => {
@@ -188,6 +196,7 @@ const UserPanel = () => {
               <TableCell><strong>Product</strong></TableCell>
               <TableCell><strong>Price</strong></TableCell>
               <TableCell><strong>Status</strong></TableCell>
+              <TableCell><strong>Cancel</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -196,6 +205,20 @@ const UserPanel = () => {
                 <TableCell>{order.product?.description}</TableCell>
                 <TableCell>${order.price}</TableCell>
                 <TableCell>{order.status}</TableCell>
+                <TableCell>
+                  {order.cancellationRequested ? (
+                    <Typography color="warning.main">Requested</Typography>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleCancelRequest(order._id)}
+                    >
+                      Request Cancel
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -259,7 +282,7 @@ const UserPanel = () => {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding>
+                   <ListItem disablePadding>
             <ListItemButton
               selected={selectedTab === 'orders'}
               onClick={() => setSelectedTab('orders')}
@@ -278,20 +301,21 @@ const UserPanel = () => {
         </List>
       </Drawer>
 
-    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 10 }}>
-  <Typography variant="h4" sx={{ mb: 2 }}>
-    {selectedTab === 'pending'
-      ? 'My Pending Products'
-      : selectedTab === 'approved'
-      ? 'My Approved Products'
-      : 'My Orders'}
-  </Typography>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 10 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
+          {selectedTab === 'pending'
+            ? 'My Pending Products'
+            : selectedTab === 'approved'
+            ? 'My Approved Products'
+            : 'My Orders'}
+        </Typography>
 
-  {renderContent()}
-</Box>
-
+        {renderContent()}
+      </Box>
     </Box>
   );
 };
 
 export default UserPanel;
+
+          

@@ -1,3 +1,4 @@
+// All imports remain unchanged
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
@@ -30,7 +31,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 import {
   fetchAllOrders,
   updateOrderStatus,
-} from '../Redux/Slices/OrderSlice'; // ✅ Redux actions
+} from '../Redux/Slices/OrderSlice';
 
 const drawerWidth = 240;
 
@@ -40,15 +41,13 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [pendingProducts, setPendingProducts] = useState([]);
   const [approvedProducts, setApprovedProducts] = useState([]);
-  const orders = useSelector((state) => state.orders.adminOrders); // ✅ Redux state
+  const orders = useSelector((state) => state.orders.adminOrders);
   const [statusMap, setStatusMap] = useState({});
 
   const fetchAllProducts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [approvedRes, pendingRes] = await Promise.all([
         axios.get('https://2nd-project-backend-production.up.railway.app/api/products'),
@@ -70,7 +69,7 @@ const AdminPanel = () => {
   const fetchOrders = useCallback(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      dispatch(fetchAllOrders(token)); // ✅ Fetch orders
+      dispatch(fetchAllOrders(token));
     }
   }, [dispatch]);
 
@@ -79,11 +78,7 @@ const AdminPanel = () => {
       await axios.patch(
         `https://2nd-project-backend-production.up.railway.app/api/products/approve/${id}`,
         null,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       fetchAllProducts();
     } catch (err) {
@@ -96,11 +91,7 @@ const AdminPanel = () => {
       await axios.patch(
         `https://2nd-project-backend-production.up.railway.app/api/products/reject/${id}`,
         null,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       fetchAllProducts();
     } catch (err) {
@@ -120,6 +111,15 @@ const AdminPanel = () => {
     }
   };
 
+  const handleApproveCancellation = (orderId) => {
+    const token = localStorage.getItem('token');
+    dispatch(updateOrderStatus({ orderId, status: 'Cancelled', token }));
+  };
+
+  const handleRejectCancellation = () => {
+    alert('Cancellation rejected. No status change applied.');
+  };
+
   const logout = () => {
     dispatch(logoutAction());
     localStorage.clear();
@@ -134,7 +134,7 @@ const AdminPanel = () => {
       return;
     }
     fetchAllProducts();
-    fetchOrders(); // ✅ Load orders
+    fetchOrders();
   }, [fetchAllProducts, fetchOrders, navigate]);
 
   const renderPendingTable = () => (
@@ -155,21 +155,10 @@ const AdminPanel = () => {
               <TableCell>${product.price || '0.00'}</TableCell>
               <TableCell>{product.category || 'N/A'}</TableCell>
               <TableCell>
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => approveProduct(product._id)}
-                  sx={{ mr: 1 }}
-                >
+                <Button variant="contained" color="success" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>
                   Approve
                 </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={() => rejectProduct(product._id)}
-                >
+                <Button variant="outlined" color="error" size="small" onClick={() => rejectProduct(product._id)}>
                   Reject
                 </Button>
               </TableCell>
@@ -212,15 +201,16 @@ const AdminPanel = () => {
             <TableCell><strong>Price</strong></TableCell>
             <TableCell><strong>User</strong></TableCell>
             <TableCell><strong>Status</strong></TableCell>
-            <TableCell><strong>Action</strong></TableCell>
+            <TableCell><strong>Update</strong></TableCell>
+            <TableCell><strong>Cancel Request</strong></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {orders.map((order) => (
             <TableRow key={order._id}>
-              <TableCell>{order.product.description || 'N/A'}</TableCell>
+              <TableCell>{order.product.description}</TableCell>
               <TableCell>${order.price}</TableCell>
-              <TableCell>{order.user?.username || 'Unknown'}</TableCell>
+              <TableCell>{order.user?.username}</TableCell>
               <TableCell>
                 <Select
                   value={statusMap[order._id] || order.status}
@@ -230,16 +220,38 @@ const AdminPanel = () => {
                   <MenuItem value="Processing">Processing</MenuItem>
                   <MenuItem value="Dispatched">Dispatched</MenuItem>
                   <MenuItem value="Delivered">Delivered</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
                 </Select>
               </TableCell>
               <TableCell>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => handleUpdateStatus(order._id)}
-                >
+                <Button variant="contained" size="small" onClick={() => handleUpdateStatus(order._id)}>
                   Update
                 </Button>
+              </TableCell>
+              <TableCell>
+                {order.cancellationRequested ? (
+                  <>
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      size="small"
+                      onClick={() => handleApproveCancellation(order._id)}
+                      sx={{ mr: 1 }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleRejectCancellation(order._id)}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                ) : (
+                  <Typography color="text.secondary">No request</Typography>
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -251,7 +263,7 @@ const AdminPanel = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <Drawer
+          <Drawer
         sx={{
           width: drawerWidth,
           flexShrink: 0,

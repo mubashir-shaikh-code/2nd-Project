@@ -1,37 +1,57 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// 🔄 Place an order
+const BASE_URL = 'https://2nd-project-backend-production.up.railway.app/api/orders';
+
+//  Place an order
 export const placeOrder = createAsyncThunk('orders/placeOrder', async ({ orderData, token }) => {
-  const res = await axios.post('https://2nd-project-backend-production.up.railway.app/api/orders/place', orderData, {
+  const res = await axios.post(`${BASE_URL}/place`, orderData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 });
 
-// 👤 Get orders for logged-in user
+//  Get orders for logged-in user
 export const fetchUserOrders = createAsyncThunk('orders/fetchUserOrders', async (token) => {
-  const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/orders/user', {
+  const res = await axios.get(`${BASE_URL}/user`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 });
 
-// 🛠️ Get all orders (admin only)
+// Request cancellation (user)
+export const requestOrderCancellation = createAsyncThunk(
+  'orders/requestOrderCancellation',
+  async ({ orderId, token }, { rejectWithValue }) => {
+    try {
+      const res = await axios.patch(`${BASE_URL}/cancel/${orderId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { orderId, message: res.data.message };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Cancel request failed');
+    }
+  }
+);
+
+// Get all orders (admin only)
 export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (token) => {
-  const res = await axios.get('https://2nd-project-backend-production.up.railway.app/api/orders/admin', {
+  const res = await axios.get(`${BASE_URL}/admin`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 });
 
-// 🚚 Update order status (admin only)
-export const updateOrderStatus = createAsyncThunk('orders/updateOrderStatus', async ({ orderId, status, token }) => {
-  const res = await axios.put(`https://2nd-project-backend-production.up.railway.app/api/orders/admin/${orderId}`, { status }, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-});
+//  Update order status (admin only)
+export const updateOrderStatus = createAsyncThunk(
+  'orders/updateOrderStatus',
+  async ({ orderId, status, token }) => {
+    const res = await axios.put(`${BASE_URL}/admin/${orderId}`, { status }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data;
+  }
+);
 
 const ordersSlice = createSlice({
   name: 'orders',
@@ -44,6 +64,7 @@ const ordersSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      //  Place Order
       .addCase(placeOrder.pending, (state) => {
         state.loading = true;
       })
@@ -51,19 +72,37 @@ const ordersSlice = createSlice({
         state.loading = false;
         state.userOrders.push(action.payload);
       })
-      .addCase(fetchUserOrders.fulfilled, (state, action) => {
-        state.userOrders = action.payload;
-      })
-      .addCase(fetchAllOrders.fulfilled, (state, action) => {
-        state.adminOrders = action.payload;
-      })
-      .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const index = state.adminOrders.findIndex(o => o._id === action.payload._id);
-        if (index !== -1) state.adminOrders[index] = action.payload;
-      })
       .addCase(placeOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
+      })
+
+      // Fetch User Orders
+      .addCase(fetchUserOrders.fulfilled, (state, action) => {
+        state.userOrders = action.payload;
+      })
+
+      // Request Cancellation
+      .addCase(requestOrderCancellation.fulfilled, (state, action) => {
+        const { orderId } = action.payload;
+        const index = state.userOrders.findIndex((order) => order._id === orderId);
+        if (index !== -1) {
+          state.userOrders[index].cancellationRequested = true;
+        }
+      })
+      .addCase(requestOrderCancellation.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      //  Admin: Fetch All Orders
+      .addCase(fetchAllOrders.fulfilled, (state, action) => {
+        state.adminOrders = action.payload;
+      })
+
+      // Admin: Update Order Status
+      .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        const index = state.adminOrders.findIndex(o => o._id === action.payload._id);
+        if (index !== -1) state.adminOrders[index] = action.payload;
       });
   },
 });
