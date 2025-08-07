@@ -99,10 +99,19 @@ const ordersSlice = createSlice({
         state.adminOrders = action.payload;
       })
 
-      // Admin: Update Order Status
+      // ✅ Admin: Update Order Status — with cancellation removal logic
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const index = state.adminOrders.findIndex(o => o._id === action.payload._id);
-        if (index !== -1) state.adminOrders[index] = action.payload;
+        const updatedOrder = action.payload;
+
+        // If cancellation is approved, remove from both panels
+        if (updatedOrder.cancelApproved) {
+          state.adminOrders = state.adminOrders.filter(o => o._id !== updatedOrder._id);
+          state.userOrders = state.userOrders.filter(o => o._id !== updatedOrder._id);
+        } else {
+          // Otherwise, just update the order in adminOrders
+          const index = state.adminOrders.findIndex(o => o._id === updatedOrder._id);
+          if (index !== -1) state.adminOrders[index] = updatedOrder;
+        }
       });
   },
 });
