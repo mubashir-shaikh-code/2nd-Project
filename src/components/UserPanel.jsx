@@ -202,7 +202,7 @@ const renderOrdersTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => (
+            {visibleOrders.map((order) => (
               <TableRow key={order._id}>
                 <TableCell>{order.product?.description}</TableCell>
                 <TableCell>${order.price}</TableCell>
