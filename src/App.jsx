@@ -14,7 +14,8 @@ import Contact from './components/Contact';
 import Cart from './components/Cart';
 import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
-import UserPanel from './components/UserPanel'; // ✅ Already present
+import UserPanel from './components/UserPanel'; 
+import Profile from './components/Profile'; 
 
 const App = () => {
   const location = useLocation();
@@ -85,6 +86,7 @@ const App = () => {
         />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/user-panel" element={<UserPanel />} />
+        <Route path="/user-panel" element={<Profile />} />
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}

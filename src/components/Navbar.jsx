@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaBars, FaTimes } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const Navbar = ({ sup }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,18 +65,29 @@ const Navbar = ({ sup }) => {
           </div>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-36 bg-white text-black rounded shadow-lg z-50">
+            <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg z-50">
+              <button
+                onClick={() => navigate('/profile')}
+                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
+              >
+                <AccountCircleIcon sx={{ mr: 1 }} />
+                <span>Profile</span>
+              </button>
+
               <button
                 onClick={handleUserPanel}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
               >
-                User Panel
+                <DashboardIcon sx={{ mr: 1 }} />
+                <span>User Panel</span>
               </button>
+
               <button
                 onClick={logout}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
               >
-                Logout
+                <LogoutIcon sx={{ mr: 1 }} />
+                <span>Logout</span>
               </button>
             </div>
           )}
@@ -128,18 +142,29 @@ const Navbar = ({ sup }) => {
                 <span className="text-sm text-white">{user.username}</span>
               </div>
               {dropdownOpen && (
-                <div className="bg-white text-black rounded shadow-lg mt-2 w-36">
+                <div className="bg-white text-black rounded shadow-lg mt-2 w-40">
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
+                  >
+                    <AccountCircleIcon sx={{ mr: 1 }} />
+                    <span>Profile</span>
+                  </button>
+
                   <button
                     onClick={handleUserPanel}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
                   >
-                    User Panel
+                    <DashboardIcon sx={{ mr: 1 }} />
+                    <span>User Panel</span>
                   </button>
+
                   <button
                     onClick={logout}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
                   >
-                    Logout
+                    <LogoutIcon sx={{ mr: 1 }} />
+                    <span>Logout</span>
                   </button>
                 </div>
               )}
