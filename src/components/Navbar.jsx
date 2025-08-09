@@ -27,6 +27,11 @@ const Navbar = ({ sup }) => {
     setDropdownOpen(false);
   };
 
+   const handleProfile = () => {
+    navigate('/Profile');
+    setDropdownOpen(false);
+  };
+
   const renderLinks = () => (
     <>
       <li><Link onClick={closeMenu} to="/home" className="hover:text-gray-300">Home</Link></li>
@@ -67,7 +72,7 @@ const Navbar = ({ sup }) => {
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg z-50">
               <button
-                onClick={() => navigate('/profile')}
+                onClick={handleProfile}
                 className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
               >
                 <AccountCircleIcon sx={{ mr: 1 }} />
@@ -144,7 +149,7 @@ const Navbar = ({ sup }) => {
               {dropdownOpen && (
                 <div className="bg-white text-black rounded shadow-lg mt-2 w-40">
                   <button
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate('./Profile')}
                     className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200"
                   >
                     <AccountCircleIcon sx={{ mr: 1 }} />

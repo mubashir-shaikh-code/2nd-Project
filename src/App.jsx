@@ -86,7 +86,7 @@ const App = () => {
         />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/user-panel" element={<UserPanel />} />
-        <Route path="/user-panel" element={<Profile />} />
+        <Route path="/Profile" element={<Profile />} />
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}

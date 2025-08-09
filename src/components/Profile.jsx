@@ -22,10 +22,12 @@ const Profile = () => {
   });
   const [previewPic, setPreviewPic] = useState('');
 
+  const API_BASE = 'https://2nd-project-backend-production.up.railway.app';
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data } = await axios.get('/api/users/profile', {
+        const { data } = await axios.get(`${API_BASE}/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFormData({
@@ -61,17 +63,18 @@ const Profile = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.put('/api/users/profile', formData, {
+      await axios.put(`${API_BASE}/api/users/profile`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert('Profile updated successfully!');
     } catch (err) {
       console.error('Update failed:', err);
+      alert('Failed to update profile');
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 6 }}>
+    <Container maxWidth="sm" sx={{ mt: 20 }}>
       <Typography variant="h4" gutterBottom>
         User Profile
       </Typography>
