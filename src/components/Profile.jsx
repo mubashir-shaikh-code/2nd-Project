@@ -15,7 +15,7 @@ import { useSelector } from 'react-redux';
 const Profile = () => {
   const { token } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
     profilePic: '',
@@ -31,7 +31,7 @@ const Profile = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFormData({
-          name: data.name,
+          username: data.username,
           email: data.email,
           password: '',
           profilePic: data.profilePic,
@@ -46,7 +46,7 @@ const Profile = () => {
   }, [token]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.username]: e.target.value });
   };
 
   const handlePicUpload = (e) => {
@@ -89,9 +89,9 @@ const Profile = () => {
         <Grid item xs={12}>
           <TextField
             fullWidth
-            label="Name"
-            name="name"
-            value={formData.name}
+            label="UserName"
+            name="Username"
+            value={formData.username}
             onChange={handleChange}
           />
         </Grid>
