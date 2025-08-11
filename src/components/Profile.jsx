@@ -22,7 +22,7 @@ const Profile = () => {
   });
   const [previewPic, setPreviewPic] = useState('');
 
-  const API_BASE = 'https://2nd-project-backend.vercel.app/';
+  const API_BASE = 'https://genuine-cactus-0e14dd.netlify.app/';
 
   useEffect(() => {
     const fetchProfile = async () => {

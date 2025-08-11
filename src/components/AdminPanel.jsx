@@ -49,8 +49,8 @@ const AdminPanel = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [approvedRes, pendingRes] = await Promise.all([
-        axios.get('https://2nd-project-backend.vercel.app//api/products'),
-        axios.get('https://2nd-project-backend.vercel.app//api/products/pending', config),
+        axios.get('https://genuine-cactus-0e14dd.netlify.app//api/products'),
+        axios.get('https://genuine-cactus-0e14dd.netlify.app//api/products/pending', config),
       ]);
 
       setApprovedProducts(approvedRes.data);
@@ -75,7 +75,7 @@ const AdminPanel = () => {
   const approveProduct = async (id) => {
     try {
       await axios.patch(
-        `https://2nd-project-backend.vercel.app//api/products/approve/${id}`,
+        `https://genuine-cactus-0e14dd.netlify.app//api/products/approve/${id}`,
         null,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -88,7 +88,7 @@ const AdminPanel = () => {
   const rejectProduct = async (id) => {
     try {
       await axios.patch(
-        `https://2nd-project-backend.vercel.app//api/products/reject/${id}`,
+        `https://genuine-cactus-0e14dd.netlify.app//api/products/reject/${id}`,
         null,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );

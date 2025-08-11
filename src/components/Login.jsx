@@ -72,7 +72,7 @@ const Login = () => {
           };
 
       const response = await fetch(
-        `https://2nd-project-backend.vercel.app/${endpoint}`,
+        `https://genuine-cactus-0e14dd.netlify.app/${endpoint}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
