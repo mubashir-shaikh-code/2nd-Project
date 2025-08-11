@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { addToCart, clearCart } from './Redux/Slices/CartSlice';
-import { loadUserFromStorage, logout } from './Redux/Slices/AuthSlice'; // ✅ Import
+import { loadUserFromStorage, logout } from './Redux/Slices/AuthSlice'; 
 
 import Login from './components/Login';
 import Navbar from './components/Navbar';

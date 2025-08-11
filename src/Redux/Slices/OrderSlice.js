@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = 'https://2nd-project-backend-production.up.railway.app/api/orders';
+const BASE_URL = 'https://2nd-project-backend.vercel.app/api/orders';
 
 //  Place an order
 export const placeOrder = createAsyncThunk('orders/placeOrder', async ({ orderData, token }) => {

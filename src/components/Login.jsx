@@ -72,7 +72,7 @@ const Login = () => {
           };
 
       const response = await fetch(
-        `https://2nd-project-backend-production.up.railway.app${endpoint}`,
+        `https://2nd-project-backend.vercel.app/${endpoint}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

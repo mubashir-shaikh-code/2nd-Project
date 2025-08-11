@@ -57,7 +57,7 @@ const Cart = ({ clear }) => {
 
       {orderPlaced ? (
         <div className="text-green-600 text-2xl font-semibold">
-          🎉 Order placed successfully! HOOORRAAYY! 🎉
+          Order placed successfully! Visit your Panel for Updates
         </div>
       ) : cartItems.length === 0 ? (
         <p className="text-xl text-gray-600">Your cart is empty</p>

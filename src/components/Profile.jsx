@@ -5,7 +5,7 @@ import {
   TextField,
   Button,
   Avatar,
-  Grid,
+    Grid,
   IconButton,
 } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
@@ -22,12 +22,12 @@ const Profile = () => {
   });
   const [previewPic, setPreviewPic] = useState('');
 
-  const API_BASE = 'https://2nd-project-backend-production.up.railway.app';
+  const API_BASE = 'https://2nd-project-backend.vercel.app/';
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data } = await axios.get(`${API_BASE}/api/users/profile`, {
+        const { data } = await axios.get(`${API_BASE}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFormData({
@@ -46,7 +46,7 @@ const Profile = () => {
   }, [token]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.username]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handlePicUpload = (e) => {
@@ -63,7 +63,7 @@ const Profile = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.put(`${API_BASE}/api/users/profile`, formData, {
+      await axios.put(`${API_BASE}/api/auth/profile`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert('Profile updated successfully!');
@@ -90,7 +90,7 @@ const Profile = () => {
           <TextField
             fullWidth
             label="UserName"
-            name="Username"
+            name="username"
             value={formData.username}
             onChange={handleChange}
           />
@@ -101,7 +101,7 @@ const Profile = () => {
             label="Email"
             name="email"
             value={formData.email}
-            disabled
+            onChange={handleChange}
           />
         </Grid>
         <Grid item xs={12}>

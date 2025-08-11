@@ -4,7 +4,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async () => {
-    const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products');
+    const res = await fetch('https://2nd-project-backend.vercel.app//api/products');
     if (!res.ok) throw new Error('Failed to fetch products');
     return await res.json();
   }
@@ -15,7 +15,7 @@ export const fetchUserProducts = createAsyncThunk(
   'products/fetchUserProducts',
   async (userEmail) => {
     const res = await fetch(
-      `https://2nd-project-backend-production.up.railway.app/api/products/user?userEmail=${encodeURIComponent(userEmail)}`
+      `https://2nd-project-backend.vercel.app//api/products/user?userEmail=${encodeURIComponent(userEmail)}`
     );
     if (!res.ok) throw new Error('Failed to fetch user products');
     return await res.json();
@@ -26,7 +26,7 @@ export const fetchUserProducts = createAsyncThunk(
 export const postProduct = createAsyncThunk(
   'products/postProduct',
   async ({ payload, token }) => {
-    const res = await fetch('https://2nd-project-backend-production.up.railway.app/api/products', {
+    const res = await fetch('https://2nd-project-backend.vercel.app//api/products', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async ({ id, updatedData }) => {
     const res = await fetch(
-      `https://2nd-project-backend-production.up.railway.app/api/products/${id}`,
+      `https://2nd-project-backend.vercel.app//api/products/${id}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

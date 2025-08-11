@@ -64,7 +64,7 @@ const UserPanel = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const res = await axios.get(
-        'https://2nd-project-backend-production.up.railway.app/api/products/user',
+        'https://2nd-project-backend.vercel.app//api/products/user',
         config
       );
 
@@ -111,7 +111,7 @@ const UserPanel = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `https://2nd-project-backend-production.up.railway.app/api/products/${productId}`,
+        `https://2nd-project-backend.vercel.app//api/products/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
