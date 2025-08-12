@@ -4,6 +4,7 @@ import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
+import OtpModal from './OtpModal'; // ✅ Import OTP modal
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -13,6 +14,7 @@ const Login = () => {
     password: '',
     profilePic: null,
   });
+  const [showOtpModal, setShowOtpModal] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -59,60 +61,85 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const endpoint = isSignIn ? '/api/auth/login' : '/api/auth/register';
-
-      const payload = isSignIn
-        ? { email: formData.email, password: formData.password }
-        : {
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            profilePic: formData.profilePic,
-          };
-
-      const response = await fetch(
-        `https://genuine-cactus-0e14dd.netlify.app/${endpoint}`,
-        {
+    if (isSignIn) {
+      // 🔐 Login flow
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.error || 'Something went wrong');
+          return;
         }
-      );
 
-      const data = await response.json();
+        const user = {
+          ...data.user,
+          profilePic: data.user.profilePic || formData.profilePic || null,
+          isAdmin: data.isAdmin || false,
+        };
 
-      if (!response.ok) {
-        alert(data.error || 'Something went wrong');
+        dispatch(loginSuccess({ user, token: data.token }));
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
+
+        navigate(data.isAdmin ? '/admin' : '/home');
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Server error. Please try again.');
+      }
+    } else {
+      // 📨 Send OTP before registration
+      try {
+        const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          alert(data.message || 'Failed to send OTP');
+          return;
+        }
+
+        setShowOtpModal(true);
+      } catch (error) {
+        console.error('OTP error:', error);
+        alert('Failed to send OTP');
+      }
+    }
+  };
+
+  const handleOtpSuccess = async () => {
+    try {
+      const registerRes = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const registerData = await registerRes.json();
+
+      if (!registerRes.ok) {
+        alert(registerData.error || 'Registration failed');
         return;
       }
 
-      if (!isSignIn) {
-        alert('Registration successful! Please sign in.');
-        setIsSignIn(true);
-        return;
-      }
-
-      const user = {
-        ...data.user,
-        profilePic: data.user.profilePic || formData.profilePic || null,
-        isAdmin: data.isAdmin || false,
-      };
-
-      dispatch(loginSuccess({ user, token: data.token }));
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('isAdmin',user.isAdmin ? 'true' : 'false');
-
-      // ✅ Redirect admin or normal user
-      if (data.isAdmin) {
-        navigate('/admin');
-      } else {
-        navigate('/home');
-      }
+      alert('Registration successful! Please sign in.');
+      setIsSignIn(true);
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Server error. Please try again.');
+      console.error('Registration error:', error);
+      alert('Server error during registration');
     }
   };
 
@@ -204,6 +231,15 @@ const Login = () => {
           </button>
         </div>
       </div>
+
+      {/* ✅ OTP Modal */}
+      {showOtpModal && (
+        <OtpModal
+          email={formData.email}
+          onSuccess={handleOtpSuccess}
+          onClose={() => setShowOtpModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -22,7 +22,7 @@ const Profile = () => {
   });
   const [previewPic, setPreviewPic] = useState('');
 
-  const API_BASE = 'https://genuine-cactus-0e14dd.netlify.app/';
+  const API_BASE = 'http://localhost:5000';
 
   useEffect(() => {
     const fetchProfile = async () => {

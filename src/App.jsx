@@ -16,6 +16,7 @@ import Products from './components/Products';
 import AdminPanel from './components/AdminPanel';
 import UserPanel from './components/UserPanel'; 
 import Profile from './components/Profile'; 
+import OtpModal from './components/OtpModal'; 
 
 const App = () => {
   const location = useLocation();
@@ -87,6 +88,7 @@ const App = () => {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/user-panel" element={<UserPanel />} />
         <Route path="/Profile" element={<Profile />} />
+        <Route path="/OtpModal" element={<OtpModal />} />
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}

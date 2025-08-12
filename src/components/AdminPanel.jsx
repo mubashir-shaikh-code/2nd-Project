@@ -49,8 +49,8 @@ const AdminPanel = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [approvedRes, pendingRes] = await Promise.all([
-        axios.get('https://genuine-cactus-0e14dd.netlify.app//api/products'),
-        axios.get('https://genuine-cactus-0e14dd.netlify.app//api/products/pending', config),
+        axios.get('http://localhost:5000/api/products'),
+        axios.get('http://localhost:5000/api/products/pending', config),
       ]);
 
       setApprovedProducts(approvedRes.data);
@@ -75,7 +75,7 @@ const AdminPanel = () => {
   const approveProduct = async (id) => {
     try {
       await axios.patch(
-        `https://genuine-cactus-0e14dd.netlify.app//api/products/approve/${id}`,
+        `http://localhost:5000/api/products/approve/${id}`,
         null,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -88,7 +88,7 @@ const AdminPanel = () => {
   const rejectProduct = async (id) => {
     try {
       await axios.patch(
-        `https://genuine-cactus-0e14dd.netlify.app//api/products/reject/${id}`,
+        `http://localhost:5000/api/products/reject/${id}`,
         null,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );

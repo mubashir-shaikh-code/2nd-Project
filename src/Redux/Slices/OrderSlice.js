@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const BASE_URL = 'https://genuine-cactus-0e14dd.netlify.app/api/orders';
+const BASE_URL = 'http://localhost:5000/api/orders';
 
 //  Place an order
 export const placeOrder = createAsyncThunk('orders/placeOrder', async ({ orderData, token }) => {

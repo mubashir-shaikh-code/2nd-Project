@@ -64,7 +64,7 @@ const UserPanel = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const res = await axios.get(
-        'https://genuine-cactus-0e14dd.netlify.app//api/products/user',
+        'http://localhost:5000/api/products/user',
         config
       );
 
@@ -111,7 +111,7 @@ const UserPanel = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `https://genuine-cactus-0e14dd.netlify.app//api/products/${productId}`,
+        `http://localhost:5000//api/products/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
