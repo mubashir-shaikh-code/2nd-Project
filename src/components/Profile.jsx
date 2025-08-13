@@ -104,17 +104,7 @@ const Profile = () => {
             onChange={handleChange}
           />
         </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="New Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12 }>
           <Button variant="contained" fullWidth onClick={handleUpdate}>
             Update Profile
           </Button>
