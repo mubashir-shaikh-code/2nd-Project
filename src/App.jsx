@@ -39,7 +39,7 @@ const App = () => {
           alert('Session expired. Please log in again.');
           navigate('/login');
         } else {
-          dispatch(loadUserFromStorage()); // ✅ Rehydrate auth state
+          dispatch(loadUserFromStorage()); //   Rehydrate auth state
         }
       } catch (err) {
         console.error('Token decoding failed:', err);

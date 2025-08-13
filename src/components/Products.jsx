@@ -10,14 +10,14 @@ const Products = () => {
   const navigate = useNavigate();
 
   const { allProducts = [], status, error } = useSelector((state) => state.products || {});
-  const user = useSelector((state) => state.auth.user); // ✅ Get logged-in user
+  const user = useSelector((state) => state.auth.user); //   Get logged-in user
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // 👇 Fetch products
+  // Fetch products
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch, location.pathname]);

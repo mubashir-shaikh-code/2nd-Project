@@ -99,7 +99,7 @@ const ordersSlice = createSlice({
         state.adminOrders = action.payload;
       })
 
-      // ✅ Admin: Update Order Status — with cancellation removal logic
+      // Admin: Update Order Status — with cancellation removal logic
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         const updatedOrder = action.payload;
 

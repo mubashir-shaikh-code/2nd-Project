@@ -46,7 +46,7 @@ const Cart = ({ clear }) => {
       setOrderPlaced(true);
       clear();
     } catch (error) {
-      console.error('❌ Order placement failed:', error);
+      console.error('   Order placement failed:', error);
       alert('Something went wrong while placing your order. Please try again.');
     }
   };

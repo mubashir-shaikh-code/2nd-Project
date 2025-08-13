@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// ✅ Fetch all approved products for homepage
+// Fetch all approved products for homepage
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async () => {
@@ -10,7 +10,7 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// ✅ Fetch products of the currently logged-in user
+// Fetch products of the currently logged-in user
 export const fetchUserProducts = createAsyncThunk(
   'products/fetchUserProducts',
   async (userEmail) => {
@@ -22,7 +22,7 @@ export const fetchUserProducts = createAsyncThunk(
   }
 );
 
-// ✅ Post a new product (with auth token)
+// Post a new product (with auth token)
 export const postProduct = createAsyncThunk(
   'products/postProduct',
   async ({ payload, token }) => {
@@ -41,7 +41,7 @@ export const postProduct = createAsyncThunk(
   }
 );
 
-// ✅ Update an existing product
+// Update an existing product
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
   async ({ id, updatedData }) => {
@@ -60,7 +60,7 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
-// ✅ Slice setup
+// Slice setup
 const productSlice = createSlice({
   name: 'products',
   initialState: {
@@ -72,7 +72,7 @@ const productSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // 🟡 Fetch all approved products
+      // Fetch all approved products
       .addCase(fetchProducts.pending, (state) => {
         state.status = 'loading';
       })
@@ -85,7 +85,7 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // 🟡 Fetch user-specific products
+      // Fetch user-specific products
       .addCase(fetchUserProducts.pending, (state) => {
         state.status = 'loading';
       })
@@ -98,12 +98,12 @@ const productSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // 🟢 Post product
+      //Post product
       .addCase(postProduct.fulfilled, (state, action) => {
         state.userProducts.unshift(action.payload);
       })
 
-      // 🟢 Update product
+      // Update product
       .addCase(updateProduct.fulfilled, (state, action) => {
         const updated = action.payload;
         state.userProducts = state.userProducts.filter(p => p._id !== updated._id);

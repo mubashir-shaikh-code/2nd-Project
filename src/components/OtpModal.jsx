@@ -25,7 +25,7 @@ const VerifyOtpModal = ({ email, onSuccess, onClose }) => {
         return;
       }
 
-      // ✅ OTP verified
+      // OTP verified
       onSuccess(); // Notify parent to proceed with registration
       onClose();   // Close modal
     } catch (error) {

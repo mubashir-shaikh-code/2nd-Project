@@ -28,7 +28,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 import {
   fetchUserOrders,
   requestOrderCancellation,
-} from '../Redux/Slices/OrderSlice'; // ✅ Import Redux actions
+} from '../Redux/Slices/OrderSlice'; //   Import Redux actions
 
 const drawerWidth = 240;
 
@@ -111,7 +111,7 @@ const UserPanel = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `http://localhost:5000//api/products/${productId}`,
+        `http://localhost:5000/api/products/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

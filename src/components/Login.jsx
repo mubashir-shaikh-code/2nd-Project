@@ -4,7 +4,7 @@ import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
-import OtpModal from './OtpModal'; // ✅ Import OTP modal
+import OtpModal from './OtpModal'; //   Import OTP modal
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -19,7 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // 🔁 Session check
+  // Session check
   useEffect(() => {
     const checkToken = () => {
       const token = localStorage.getItem('token');
@@ -62,7 +62,7 @@ const Login = () => {
     e.preventDefault();
 
     if (isSignIn) {
-      // 🔐 Login flow
+      // Login flow
       try {
         const response = await fetch('http://localhost:5000/api/auth/login', {
           method: 'POST',
@@ -97,7 +97,7 @@ const Login = () => {
         alert('Server error. Please try again.');
       }
     } else {
-      // 📨 Send OTP before registration
+      // Send OTP before registration
       try {
         const res = await fetch('http://localhost:5000/api/auth/send-otp', {
           method: 'POST',
@@ -232,7 +232,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* ✅ OTP Modal */}
+      {/*   OTP Modal */}
       {showOtpModal && (
         <OtpModal
           email={formData.email}
