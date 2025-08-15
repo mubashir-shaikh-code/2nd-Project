@@ -1,9 +1,14 @@
+// src/Redux/Slices/cartSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   cartItems: [],
-  sup: 0, // cart count
+  sup: 0, // total quantity
 };
+
+// Helper to recalculate total quantity
+const calculateTotalQuantity = (items) =>
+  items.reduce((total, item) => total + (item.quantity || 0), 0);
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -11,28 +16,23 @@ const cartSlice = createSlice({
   reducers: {
     addToCart(state, action) {
       const item = action.payload;
+      if (!item || !item._id) return;
 
-      // Match by _id to prevent duplicates
-      const existingItemIndex = state.cartItems.findIndex((i) => i._id === item._id);
+      const index = state.cartItems.findIndex((i) => i._id === item._id);
 
-      if (existingItemIndex !== -1) {
-        // Item exists — increment quantity
-        state.cartItems[existingItemIndex].quantity += 1;
+      if (index !== -1) {
+        state.cartItems[index].quantity = Math.max(1, state.cartItems[index].quantity + 1);
       } else {
-        // Item doesn't exist — add with quantity 1
         state.cartItems.push({ ...item, quantity: 1 });
       }
 
-      // Update total count
-      state.sup = state.cartItems.reduce((total, item) => total + item.quantity, 0);
+      state.sup = calculateTotalQuantity(state.cartItems);
     },
 
     removeFromCart(state, action) {
       const itemId = action.payload;
       state.cartItems = state.cartItems.filter((item) => item._id !== itemId);
-
-      // Update total count
-      state.sup = state.cartItems.reduce((total, item) => total + item.quantity, 0);
+      state.sup = calculateTotalQuantity(state.cartItems);
     },
 
     clearCart(state) {

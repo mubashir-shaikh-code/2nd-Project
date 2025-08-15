@@ -1,12 +1,19 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { placeOrder } from '../Redux/Slices/OrderSlice';
 import { removeFromCart, addToCart } from '../Redux/Slices/CartSlice';
+import { usePlaceOrder } from '../Redux/Slices/OrderSlice'; // ✅ React Query hook
 
 const Cart = ({ clear }) => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [orderPlaced, setOrderPlaced] = React.useState(false);
+
+  const {
+    mutate: placeOrder,
+    isLoading,
+    isError,
+    error,
+  } = usePlaceOrder(); // ✅ React Query mutation
 
   const increment = (item) => {
     dispatch(addToCart(item));
@@ -33,6 +40,11 @@ const Cart = ({ clear }) => {
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
 
+    if (!token) {
+      alert('Please log in to place an order.');
+      return;
+    }
+
     try {
       for (let i = 0; i < cartItems.length; i++) {
         const orderData = {
@@ -40,14 +52,22 @@ const Cart = ({ clear }) => {
           price: cartItems[i].price * cartItems[i].quantity,
         };
 
-        await dispatch(placeOrder({ orderData, token }));
+        await new Promise((resolve, reject) => {
+          placeOrder(
+            { orderData, token },
+            {
+              onSuccess: resolve,
+              onError: reject,
+            }
+          );
+        });
       }
 
       setOrderPlaced(true);
       clear();
-    } catch (error) {
-      console.error('   Order placement failed:', error);
-      alert('Something went wrong while placing your order. Please try again.');
+    } catch (err) {
+      console.error('Order placement failed:', err);
+      alert(err.message || 'Something went wrong while placing your order.');
     }
   };
 
@@ -111,11 +131,18 @@ const Cart = ({ clear }) => {
             </button>
             <button
               onClick={handlePlaceOrder}
+              disabled={isLoading}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded cursor-pointer"
             >
-              Place Order
+              {isLoading ? 'Placing...' : 'Place Order'}
             </button>
           </div>
+
+          {isError && (
+            <p className="mt-4 text-red-600 text-sm">
+              {error?.message || 'Order failed. Please try again.'}
+            </p>
+          )}
         </>
       )}
     </div>

@@ -1,34 +1,29 @@
+// src/components/Home.jsx
 import React, { useState, useEffect } from 'react';
-import { Link , useNavigate} from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
 import hero from '../assets/hero.jpg';
 import PostProduct from './PostProduct';
-import { fetchProducts } from '../Redux/Slices/ProductSlice';
+import { useAllProducts } from '../Redux/Slices/ProductSlice'; // ✅ React Query hook
 
 const Home = () => {
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  const dispatch = useDispatch();
-  const { allProducts = [] } = useSelector((state) => state.products);
-
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+  const { data: allProducts = [], isLoading, isError, error } = useAllProducts(); // ✅ React Query
 
-const handlePostClick = () => {
+  const handlePostClick = () => {
     if (!user) {
       alert('Please login first to add items to cart');
-      navigate('/login'); 
+      navigate('/login');
       return;
     }
-   setShowModal(true);
+    setShowModal(true);
   };
 
   return (
@@ -39,7 +34,6 @@ const handlePostClick = () => {
         style={{ backgroundImage: `url(${hero})` }}
       >
         <div className="absolute inset-0 flex flex-col justify-center items-center text-center bg-black bg-opacity-50">
-
           <h1 className="text-white text-4xl font-bold mb-6">Welcome to LiFlow Store</h1>
           <h1 className="text-white text-20 mb-6">Find Your Style. Shop With Ease</h1>
           <button
@@ -54,24 +48,34 @@ const handlePostClick = () => {
       {/* Featured Products */}
       <div className="py-10 px-6">
         <h2 className="text-2xl font-bold mb-6 text-center">Featured Products</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {allProducts.slice(0, 4).map((product) => (
-            <div
-              key={product._id}
-              className="border p-4 rounded-xl shadow text-center flex flex-col items-center"
-            >
-              {product.image && (
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="h-40 object-cover mb-4 rounded"
-                />
-              )}
-              <p className="text-sm text-gray-600 font-semibold">{product.description}</p>
-              <p className="text-lg font-bold">${product.price}</p>
-            </div>
-          ))}
-        </div>
+
+        {isLoading && <p className="text-center text-gray-500">Loading products...</p>}
+        {isError && (
+          <p className="text-center text-red-500">
+            {error?.message || 'Failed to load products.'}
+          </p>
+        )}
+
+        {!isLoading && !isError && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {allProducts.slice(0, 4).map((product) => (
+              <div
+                key={product._id}
+                className="border p-4 rounded-xl shadow text-center flex flex-col items-center"
+              >
+                {product.image && (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-40 object-cover mb-4 rounded"
+                  />
+                )}
+                <p className="text-sm text-gray-600 font-semibold">{product.description}</p>
+                <p className="text-lg font-bold">${product.price}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* View All Products Button */}
         <div className="mt-10 text-center">

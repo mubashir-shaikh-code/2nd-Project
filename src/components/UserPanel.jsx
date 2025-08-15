@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   CssBaseline,
@@ -24,76 +24,76 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
-import {
-  fetchUserOrders,
-  requestOrderCancellation,
-} from '../Redux/Slices/OrderSlice'; //   Import Redux actions
 
 const drawerWidth = 240;
+
+const fetchUserProducts = async () => {
+  const token = localStorage.getItem('token');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const res = await axios.get('http://localhost:5000/api/products/user', config);
+  return res.data;
+};
+
+const fetchUserOrders = async () => {
+  const token = localStorage.getItem('token');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const res = await axios.get('http://localhost:5000/api/orders/user', config);
+  return res.data;
+};
+
+const requestOrderCancellationAPI = async (orderId) => {
+  const token = localStorage.getItem('token');
+  await axios.patch(
+    `http://localhost:5000/api/orders/cancel/${orderId}`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+};
+
+const deleteProductAPI = async (productId) => {
+  const token = localStorage.getItem('token');
+  await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
 const UserPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const user = useSelector((state) => state.auth.user);
-  const orders = useSelector((state) => state.orders.userOrders);
 
   const [selectedTab, setSelectedTab] = useState('pending');
-  const [pendingProducts, setPendingProducts] = useState([]);
-  const [approvedProducts, setApprovedProducts] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(null);
 
-  const handleAuthError = useCallback(
-    (error) => {
-      console.error(error);
-      if (error.response?.status === 401) {
-        alert('Session expired. Please login again.');
-        localStorage.clear();
-        dispatch(logoutAction());
-        navigate('/login');
-      }
+  const {
+    data: products = [],
+    isError: productError,
+  } = useQuery(['userProducts'], fetchUserProducts);
+
+  const {
+    data: orders = [],
+    isError: orderError,
+  } = useQuery(['userOrders'], fetchUserOrders);
+
+  const cancelOrderMutation = useMutation(requestOrderCancellationAPI, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userOrders']);
     },
-    [dispatch, navigate]
-  );
+  });
 
-  const fetchUserProducts = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Token missing');
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      const res = await axios.get(
-        'http://localhost:5000/api/products/user',
-        config
-      );
-
-      const pending = res.data.filter((product) => product.status === 'pending');
-      const approved = res.data.filter((product) => product.status === 'approved');
-
-      setPendingProducts(pending);
-      setApprovedProducts(approved);
-    } catch (error) {
-      setErrorMessage('Failed to fetch your products.');
-      handleAuthError(error);
-    }
-  }, [handleAuthError]);
-
-  const fetchOrders = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      dispatch(fetchUserOrders(token));
-    }
-  }, [dispatch]);
+  const deleteProductMutation = useMutation(deleteProductAPI, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userProducts']);
+    },
+  });
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
-      return;
     }
-    fetchUserProducts();
-    fetchOrders();
-  }, [user, fetchUserProducts, fetchOrders, navigate]);
+  }, [user, navigate]);
 
   const logout = () => {
     dispatch(logoutAction());
@@ -105,29 +105,13 @@ const UserPanel = () => {
     navigate(`/edit-product/${productId}`);
   };
 
-  const handleDelete = async (productId) => {
+  const handleDelete = (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(
-        `http://localhost:5000/api/products/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      fetchUserProducts();
-    } catch (err) {
-      console.error('Delete error:', err);
-      alert('Failed to delete product');
-    }
+    deleteProductMutation.mutate(productId);
   };
 
   const handleCancelRequest = (orderId) => {
-    const token = localStorage.getItem('token');
-    dispatch(requestOrderCancellation({ orderId, token }));
+    cancelOrderMutation.mutate(orderId);
   };
 
   const renderProductTable = (products, isPending) => {
@@ -183,12 +167,12 @@ const UserPanel = () => {
     );
   };
 
-const renderOrdersTable = () => {
-  const visibleOrders = orders.filter(order => !order.cancelApproved);
+  const renderOrdersTable = () => {
+    const visibleOrders = orders.filter(order => !order.cancelApproved);
 
-  if (!visibleOrders.length) {
-    return <Typography>No orders found.</Typography>;
-  }
+    if (!visibleOrders.length) {
+      return <Typography>No orders found.</Typography>;
+    }
 
     return (
       <TableContainer component={Paper}>
@@ -230,14 +214,17 @@ const renderOrdersTable = () => {
   };
 
   const renderContent = () => {
-    if (errorMessage) {
-      return <Typography color="error">{errorMessage}</Typography>;
+    if (productError || orderError) {
+      return <Typography color="error">Failed to load data.</Typography>;
     }
 
+    const pending = products.filter(p => p.status === 'pending');
+    const approved = products.filter(p => p.status === 'approved');
+
     if (selectedTab === 'pending') {
-      return renderProductTable(pendingProducts, true);
+      return renderProductTable(pending, true);
     } else if (selectedTab === 'approved') {
-      return renderProductTable(approvedProducts, false);
+      return renderProductTable(approved, false);
     } else if (selectedTab === 'orders') {
       return renderOrdersTable();
     }
@@ -284,12 +271,12 @@ const renderOrdersTable = () => {
             </ListItemButton>
           </ListItem>
 
-                   <ListItem disablePadding>
+          <ListItem disablePadding>
             <ListItemButton
               selected={selectedTab === 'orders'}
               onClick={() => setSelectedTab('orders')}
             >
-              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+                            <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="My Orders" />
             </ListItemButton>
           </ListItem>
@@ -319,5 +306,3 @@ const renderOrdersTable = () => {
 };
 
 export default UserPanel;
-
-          

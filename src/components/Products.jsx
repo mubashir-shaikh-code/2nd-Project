@@ -1,31 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchProducts } from '../Redux/Slices/ProductSlice';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../Redux/Slices/CartSlice';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 const Products = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { allProducts = [], status, error } = useSelector((state) => state.products || {});
-  const user = useSelector((state) => state.auth.user); //   Get logged-in user
+  const user = useSelector((state) => state.auth.user); // Get logged-in user
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // Fetch products
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch, location.pathname]);
+  // ✅ React Query: Fetch products
+  const {
+    data: allProducts = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['products', location.pathname],
+  queryFn : async () => {
+  const res = await axios.get('/api/products');
+  return Array.isArray(res.data) ? res.data : [];
+},
+  });
 
   const handleAddToCart = (item) => {
     if (!user) {
       alert('Please login first to add items to cart');
-      navigate('/login'); // or show a modal instead
+      navigate('/login');
       return;
     }
     dispatch(addToCart(item));
@@ -70,10 +79,10 @@ const Products = () => {
       </div>
 
       {/* Product List */}
-      {status === 'loading' ? (
+      {isLoading ? (
         <p className="text-center text-gray-600">Loading...</p>
-      ) : error ? (
-        <p className="text-center text-red-600">{error}</p>
+      ) : isError ? (
+        <p className="text-center text-red-600">{error.message}</p>
       ) : filteredProducts.length === 0 ? (
         <p className="text-center text-gray-600">No products found.</p>
       ) : (

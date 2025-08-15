@@ -1,39 +1,39 @@
+// src/components/VerifyOtpModal.jsx
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
 
 const VerifyOtpModal = ({ email, onSuccess, onClose }) => {
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleVerifyOtp = async () => {
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.post('http://localhost:5000/api/auth/verify-otp', {
+        email,
+        otp,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      if (!data.success) {
+        alert(data.message || 'Invalid OTP');
+        return;
+      }
+      onSuccess(); // Notify parent to proceed
+      onClose();   // Close modal
+    },
+    onError: (error) => {
+      console.error('OTP verification error:', error);
+      alert('Server error during OTP verification');
+    },
+  });
+
+  const handleVerifyOtp = () => {
     if (!otp.trim()) {
       alert('Please enter the OTP');
       return;
     }
-
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        alert(data.message || 'Invalid OTP');
-        setLoading(false);
-        return;
-      }
-
-      // OTP verified
-      onSuccess(); // Notify parent to proceed with registration
-      onClose();   // Close modal
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      alert('Server error during OTP verification');
-    } finally {
-      setLoading(false);
-    }
+    mutate();
   };
 
   return (
@@ -49,10 +49,10 @@ const VerifyOtpModal = ({ email, onSuccess, onClose }) => {
         />
         <button
           onClick={handleVerifyOtp}
-          disabled={loading}
+          disabled={isPending}
           className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
         >
-          {loading ? 'Verifying...' : 'Verify OTP'}
+          {isPending ? 'Verifying...' : 'Verify OTP'}
         </button>
         <button
           onClick={onClose}

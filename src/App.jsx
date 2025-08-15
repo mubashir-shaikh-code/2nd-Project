@@ -17,6 +17,7 @@ import AdminPanel from './components/AdminPanel';
 import UserPanel from './components/UserPanel'; 
 import Profile from './components/Profile'; 
 import OtpModal from './components/OtpModal'; 
+import ResetPassword from './components/ResetPassword'; 
 
 const App = () => {
   const location = useLocation();
@@ -89,6 +90,7 @@ const App = () => {
         <Route path="/user-panel" element={<UserPanel />} />
         <Route path="/Profile" element={<Profile />} />
         <Route path="/OtpModal" element={<OtpModal />} />
+        <Route path="/ResetPassword" element={<ResetPassword />} />
       </Routes>
 
       {location.pathname !== '/admin' && <Footer />}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CssBaseline,
@@ -23,96 +23,110 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
-import {
-  fetchAllOrders,
-  updateOrderStatus,
-} from '../Redux/Slices/OrderSlice';
 
 const drawerWidth = 240;
+
+const fetchApprovedProducts = async () => {
+  const res = await axios.get('http://localhost:5000/api/products');
+  return res.data;
+};
+
+const fetchPendingProducts = async () => {
+  const token = localStorage.getItem('token');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const res = await axios.get('http://localhost:5000/api/products/pending', config);
+  return res.data;
+};
+
+const fetchOrders = async () => {
+  const token = localStorage.getItem('token');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const res = await axios.get('http://localhost:5000/api/orders/admin', config);
+  return res.data;
+};
+
+const approveProductAPI = async (id) => {
+  const token = localStorage.getItem('token');
+  await axios.patch(`http://localhost:5000/api/products/approve/${id}`, null, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+const rejectProductAPI = async (id) => {
+  const token = localStorage.getItem('token');
+  await axios.patch(`http://localhost:5000/api/products/reject/${id}`, null, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+const updateOrderStatusAPI = async ({ orderId, status }) => {
+  const token = localStorage.getItem('token');
+  await axios.patch(
+    `http://localhost:5000/api/orders/status/${orderId}`,
+    { status },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+};
 
 const AdminPanel = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [selectedTab, setSelectedTab] = useState('pending');
-  const [pendingProducts, setPendingProducts] = useState([]);
-  const [approvedProducts, setApprovedProducts] = useState([]);
-  const orders = useSelector((state) => state.orders.adminOrders);
   const [statusMap, setStatusMap] = useState({});
 
-  const fetchAllProducts = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
+  // Queries
+  const { data: approvedProducts = [] } = useQuery(['approvedProducts'], fetchApprovedProducts);
+  const { data: pendingProducts = [] } = useQuery(['pendingProducts'], fetchPendingProducts);
+  const { data: orders = [] } = useQuery(['adminOrders'], fetchOrders);
 
-      const [approvedRes, pendingRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/products'),
-        axios.get('http://localhost:5000/api/products/pending', config),
-      ]);
+  // Mutations
+  const approveProduct = useMutation(approveProductAPI, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pendingProducts']);
+      queryClient.invalidateQueries(['approvedProducts']);
+    },
+  });
 
-      setApprovedProducts(approvedRes.data);
-      setPendingProducts(pendingRes.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      if (error.response?.status === 401) {
-        alert('Unauthorized. Please login again.');
-        localStorage.clear();
-        navigate('/login');
-      }
+  const rejectProduct = useMutation(rejectProductAPI, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pendingProducts']);
+    },
+  });
+
+  const updateOrderStatus = useMutation(updateOrderStatusAPI, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminOrders']);
+    },
+  });
+
+  // Auth check
+  React.useEffect(() => {
+    localStorage.setItem('token', 'admin-token');
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (isAdmin !== 'true') {
+      navigate('/login');
     }
   }, [navigate]);
-
-  const fetchOrders = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      dispatch(fetchAllOrders(token));
-    }
-  }, [dispatch]);
-
-  const approveProduct = async (id) => {
-    try {
-      await axios.patch(
-        `http://localhost:5000/api/products/approve/${id}`,
-        null,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
-      fetchAllProducts();
-    } catch (err) {
-      console.error('Error approving product:', err);
-    }
-  };
-
-  const rejectProduct = async (id) => {
-    try {
-      await axios.patch(
-        `http://localhost:5000/api/products/reject/${id}`,
-        null,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
-      fetchAllProducts();
-    } catch (err) {
-      console.error('Error rejecting product:', err);
-    }
-  };
 
   const handleStatusChange = (orderId, status) => {
     setStatusMap((prev) => ({ ...prev, [orderId]: status }));
   };
 
   const handleUpdateStatus = (orderId) => {
-    const token = localStorage.getItem('token');
     const status = statusMap[orderId];
     if (status) {
-      dispatch(updateOrderStatus({ orderId, status, token }));
+      updateOrderStatus.mutate({ orderId, status });
     }
   };
 
   const handleApproveCancellation = (orderId) => {
-    const token = localStorage.getItem('token');
-    dispatch(updateOrderStatus({ orderId, status: 'Cancelled', token }));
+    updateOrderStatus.mutate({ orderId, status: 'Cancelled' });
   };
 
   const handleRejectCancellation = () => {
@@ -124,17 +138,6 @@ const AdminPanel = () => {
     localStorage.clear();
     navigate('/');
   };
-
-  useEffect(() => {
-    localStorage.setItem('token', 'admin-token');
-    const isAdmin = localStorage.getItem('isAdmin');
-    if (isAdmin !== 'true') {
-      navigate('/login');
-      return;
-    }
-    fetchAllProducts();
-    fetchOrders();
-  }, [fetchAllProducts, fetchOrders, navigate]);
 
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
@@ -154,10 +157,21 @@ const AdminPanel = () => {
               <TableCell>${product.price || '0.00'}</TableCell>
               <TableCell>{product.category || 'N/A'}</TableCell>
               <TableCell>
-                <Button variant="contained" color="success" size="small" onClick={() => approveProduct(product._id)} sx={{ mr: 1 }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  onClick={() => approveProduct.mutate(product._id)}
+                  sx={{ mr: 1 }}
+                >
                   Approve
                 </Button>
-                <Button variant="outlined" color="error" size="small" onClick={() => rejectProduct(product._id)}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => rejectProduct.mutate(product._id)}
+                >
                   Reject
                 </Button>
               </TableCell>
@@ -192,81 +206,81 @@ const AdminPanel = () => {
   );
 
   const renderOrdersTable = () => {
-  const visibleOrders = orders.filter(order => !order.cancelApproved);
+    const visibleOrders = orders.filter(order => !order.cancelApproved);
 
-  return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell><strong>Product</strong></TableCell>
-            <TableCell><strong>Price</strong></TableCell>
-            <TableCell><strong>User</strong></TableCell>
-            <TableCell><strong>Status</strong></TableCell>
-            <TableCell><strong>Update</strong></TableCell>
-            <TableCell><strong>Cancel Request</strong></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {visibleOrders.map((order) => (
-            <TableRow key={order._id}>
-              <TableCell>{order.product.description}</TableCell>
-              <TableCell>${order.price}</TableCell>
-              <TableCell>{order.user?.username}</TableCell>
-              <TableCell>
-                <Select
-                  value={statusMap[order._id] || order.status}
-                  onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                  size="small"
-                >
-                  <MenuItem value="Processing">Processing</MenuItem>
-                  <MenuItem value="Dispatched">Dispatched</MenuItem>
-                  <MenuItem value="Delivered">Delivered</MenuItem>
-                  <MenuItem value="Cancelled">Cancelled</MenuItem>
-                </Select>
-              </TableCell>
-              <TableCell>
-                <Button variant="contained" size="small" onClick={() => handleUpdateStatus(order._id)}>
-                  Update
-                </Button>
-              </TableCell>
-              <TableCell>
-                {order.cancelRequest ? (
-                  <>
-                    <Button
-                      variant="outlined"
-                      color="success"
-                      size="small"
-                      onClick={() => handleApproveCancellation(order._id)}
-                      sx={{ mr: 1 }}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => handleRejectCancellation(order._id)}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                ) : (
-                  <Typography color="text.secondary">No request</Typography>
-                )}
-              </TableCell>
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Product</strong></TableCell>
+              <TableCell><strong>Price</strong></TableCell>
+              <TableCell><strong>User</strong></TableCell>
+              <TableCell><strong>Status</strong></TableCell>
+              <TableCell><strong>Update</strong></TableCell>
+              <TableCell><strong>Cancel Request</strong></TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-};
+          </TableHead>
+          <TableBody>
+            {visibleOrders.map((order) => (
+              <TableRow key={order._id}>
+                <TableCell>{order.product.description}</TableCell>
+                <TableCell>${order.price}</TableCell>
+                <TableCell>{order.user?.username}</TableCell>
+                <TableCell>
+                  <Select
+                    value={statusMap[order._id] || order.status}
+                    onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                    size="small"
+                  >
+                    <MenuItem value="Processing">Processing</MenuItem>
+                    <MenuItem value="Dispatched">Dispatched</MenuItem>
+                    <MenuItem value="Delivered">Delivered</MenuItem>
+                    <MenuItem value="Cancelled">Cancelled</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Button variant="contained" size="small" onClick={() => handleUpdateStatus(order._id)}>
+                                      Update
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  {order.cancelRequest ? (
+                    <>
+                      <Button
+                        variant="outlined"
+                        color="success"
+                        size="small"
+                        onClick={() => handleApproveCancellation(order._id)}
+                        sx={{ mr: 1 }}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={handleRejectCancellation}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  ) : (
+                    <Typography color="text.secondary">No request</Typography>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-          <Drawer
+      <Drawer
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -343,3 +357,4 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
+

@@ -1,119 +1,78 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000/api/orders';
 
-//  Place an order
-export const placeOrder = createAsyncThunk('orders/placeOrder', async ({ orderData, token }) => {
-  const res = await axios.post(`${BASE_URL}/place`, orderData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
+// Axios helper
+const authHeaders = (token) => ({
+  headers: { Authorization: `Bearer ${token}` },
 });
 
-//  Get orders for logged-in user
-export const fetchUserOrders = createAsyncThunk('orders/fetchUserOrders', async (token) => {
-  const res = await axios.get(`${BASE_URL}/user`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-});
+// ✅ Place an order
+export const usePlaceOrder = () => {
+  const queryClient = useQueryClient();
 
-// Request cancellation (user)
-export const requestOrderCancellation = createAsyncThunk(
-  'orders/requestOrderCancellation',
-  async ({ orderId, token }, { rejectWithValue }) => {
-    try {
-      const res = await axios.patch(`${BASE_URL}/cancel/${orderId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  return useMutation({
+    mutationFn: async ({ orderData, token }) => {
+      const res = await axios.post(`${BASE_URL}/place`, orderData, authHeaders(token));
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userOrders']);
+    },
+  });
+};
+
+// ✅ Get orders for logged-in user
+export const useUserOrders = (token) =>
+  useQuery({
+    queryKey: ['userOrders'],
+    queryFn: async () => {
+      const res = await axios.get(`${BASE_URL}/user`, authHeaders(token));
+      return res.data;
+    },
+    enabled: !!token,
+  });
+
+// ✅ Request cancellation
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, token }) => {
+      const res = await axios.patch(`${BASE_URL}/cancel/${orderId}`, {}, authHeaders(token));
       return { orderId, message: res.data.message };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.error || 'Cancel request failed');
-    }
-  }
-);
-
-// Get all orders (admin only)
-export const fetchAllOrders = createAsyncThunk('orders/fetchAllOrders', async (token) => {
-  const res = await axios.get(`${BASE_URL}/admin`, {
-    headers: { Authorization: `Bearer ${token}` },
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userOrders']);
+      queryClient.invalidateQueries(['adminOrders']);
+    },
   });
-  return res.data;
-});
+};
 
-//  Update order status (admin only)
-export const updateOrderStatus = createAsyncThunk(
-  'orders/updateOrderStatus',
-  async ({ orderId, status, token }) => {
-    const res = await axios.put(`${BASE_URL}/admin/${orderId}`, { status }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data;
-  }
-);
+// ✅ Admin: Get all orders
+export const useAdminOrders = (token) =>
+  useQuery({
+    queryKey: ['adminOrders'],
+    queryFn: async () => {
+      const res = await axios.get(`${BASE_URL}/admin`, authHeaders(token));
+      return res.data;
+    },
+    enabled: !!token,
+  });
 
-const ordersSlice = createSlice({
-  name: 'orders',
-  initialState: {
-    userOrders: [],
-    adminOrders: [],
-    loading: false,
-    error: null,
-  },
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      //  Place Order
-      .addCase(placeOrder.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(placeOrder.fulfilled, (state, action) => {
-        state.loading = false;
-        state.userOrders.push(action.payload);
-      })
-      .addCase(placeOrder.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
+// ✅ Admin: Update order status
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
 
-      // Fetch User Orders
-      .addCase(fetchUserOrders.fulfilled, (state, action) => {
-        state.userOrders = action.payload;
-      })
-
-      // Request Cancellation
-      .addCase(requestOrderCancellation.fulfilled, (state, action) => {
-        const { orderId } = action.payload;
-        const index = state.userOrders.findIndex((order) => order._id === orderId);
-        if (index !== -1) {
-          state.userOrders[index].cancellationRequested = true;
-        }
-      })
-      .addCase(requestOrderCancellation.rejected, (state, action) => {
-        state.error = action.payload;
-      })
-
-      //  Admin: Fetch All Orders
-      .addCase(fetchAllOrders.fulfilled, (state, action) => {
-        state.adminOrders = action.payload;
-      })
-
-      // Admin: Update Order Status — with cancellation removal logic
-      .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const updatedOrder = action.payload;
-
-        // If cancellation is approved, remove from both panels
-        if (updatedOrder.cancelApproved) {
-          state.adminOrders = state.adminOrders.filter(o => o._id !== updatedOrder._id);
-          state.userOrders = state.userOrders.filter(o => o._id !== updatedOrder._id);
-        } else {
-          // Otherwise, just update the order in adminOrders
-          const index = state.adminOrders.findIndex(o => o._id === updatedOrder._id);
-          if (index !== -1) state.adminOrders[index] = updatedOrder;
-        }
-      });
-  },
-});
-
-export default ordersSlice.reducer;
+  return useMutation({
+    mutationFn: async ({ orderId, status, token }) => {
+      const res = await axios.put(`${BASE_URL}/admin/${orderId}`, { status }, authHeaders(token));
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminOrders']);
+      queryClient.invalidateQueries(['userOrders']);
+    },
+  });
+};

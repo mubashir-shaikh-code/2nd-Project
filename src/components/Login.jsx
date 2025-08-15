@@ -4,7 +4,8 @@ import bgImage from '../assets/hero.jpg';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
-import OtpModal from './OtpModal'; //   Import OTP modal
+import OtpModal from './OtpModal';
+import ResetPassword from './ResetPassword'; // ✅ New modal
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -15,11 +16,11 @@ const Login = () => {
     profilePic: null,
   });
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Session check
   useEffect(() => {
     const checkToken = () => {
       const token = localStorage.getItem('token');
@@ -62,7 +63,6 @@ const Login = () => {
     e.preventDefault();
 
     if (isSignIn) {
-      // Login flow
       try {
         const response = await fetch('http://localhost:5000/api/auth/login', {
           method: 'POST',
@@ -97,7 +97,6 @@ const Login = () => {
         alert('Server error. Please try again.');
       }
     } else {
-      // Send OTP before registration
       try {
         const res = await fetch('http://localhost:5000/api/auth/send-otp', {
           method: 'POST',
@@ -141,6 +140,38 @@ const Login = () => {
       console.error('Registration error:', error);
       alert('Server error during registration');
     }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      alert('Please enter your email first');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || 'Failed to send OTP');
+        return;
+      }
+
+      setShowOtpModal(true);
+    } catch (error) {
+      console.error('Forgot password OTP error:', error);
+      alert('Failed to send OTP');
+    }
+  };
+
+  const handleOtpForResetSuccess = () => {
+    setShowOtpModal(false);
+    setShowResetModal(true);
   };
 
   return (
@@ -211,6 +242,18 @@ const Login = () => {
             />
           </div>
 
+          {isSignIn && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
           <button
             type="submit"
             className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
@@ -225,19 +268,27 @@ const Login = () => {
           </p>
           <button
             onClick={() => setIsSignIn(!isSignIn)}
-            className="text-black font-semibold mt-1 cursor-pointer"
+                        className="text-black font-semibold mt-1 cursor-pointer"
           >
             {isSignIn ? 'Go to Sign Up' : 'Go to Sign In'}
           </button>
         </div>
       </div>
 
-      {/*   OTP Modal */}
+      {/* ✅ OTP Modal for Forgot Password */}
       {showOtpModal && (
         <OtpModal
           email={formData.email}
-          onSuccess={handleOtpSuccess}
+          onSuccess={isSignIn ? handleOtpForResetSuccess : handleOtpSuccess}
           onClose={() => setShowOtpModal(false)}
+        />
+      )}
+
+      {/* ✅ Reset Password Modal */}
+      {showResetModal && (
+        <ResetPassword
+          email={formData.email}
+          onClose={() => setShowResetModal(false)}
         />
       )}
     </div>

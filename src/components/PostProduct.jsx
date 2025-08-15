@@ -1,8 +1,7 @@
 // src/components/PostProduct.jsx
 import React, { useState } from 'react';
 import { FaPen, FaDollarSign, FaImage, FaTags } from 'react-icons/fa';
-import { useDispatch } from 'react-redux';
-import { postProduct } from '../Redux/Slices/ProductSlice';
+import { usePostProduct } from '../Redux/Slices/ProductSlice'; // ✅ React Query hook
 import bgImage from '../assets/hero.jpg';
 
 const PostProduct = ({ show, onClose }) => {
@@ -13,9 +12,15 @@ const PostProduct = ({ show, onClose }) => {
     category: 'Electronics',
   });
 
-  const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
+
+  const {
+    mutate: postProduct,
+    isLoading,
+    isError,
+    error,
+  } = usePostProduct(); // ✅ React Query mutation
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -30,7 +35,7 @@ const PostProduct = ({ show, onClose }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!user || !token) {
@@ -43,14 +48,19 @@ const PostProduct = ({ show, onClose }) => {
       userEmail: user.email,
     };
 
-    try {
-      await dispatch(postProduct({ payload, token })).unwrap();
-      alert('Product submitted for approval!');
-      onClose(); 
-    } catch (error) {
-      console.error('Post error:', error);
-      alert(error.message || 'Product post failed.');
-    }
+    postProduct(
+      { payload, token },
+      {
+        onSuccess: () => {
+          alert('Product submitted for approval!');
+          onClose();
+        },
+        onError: (err) => {
+          console.error('Post error:', err);
+          alert(err.message || 'Product post failed.');
+        },
+      }
+    );
   };
 
   if (!show) return null;
@@ -120,11 +130,18 @@ const PostProduct = ({ show, onClose }) => {
 
           <button
             type="submit"
+            disabled={isLoading}
             className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
           >
-            Post Product
+            {isLoading ? 'Posting...' : 'Post Product'}
           </button>
         </form>
+
+        {isError && (
+          <p className="mt-2 text-red-600 text-center text-sm">
+            {error?.message || 'Something went wrong.'}
+          </p>
+        )}
 
         <button
           onClick={onClose}
