@@ -1,42 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { FaUser, FaAt, FaLock } from 'react-icons/fa';
-import bgImage from '../assets/hero.jpg';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../Redux/Slices/AuthSlice';
-import OtpModal from './OtpModal';
-import ResetPassword from './ResetPassword'; //    New modal
+import React, { useState, useEffect } from "react";
+import { FaUser, FaAt, FaLock } from "react-icons/fa";
+import bgImage from "../assets/hero.jpg";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../Redux/Slices/AuthSlice";
+import OtpModal from "./OtpModal";
+import ResetPassword from "./ResetPassword";
+import { useMutation } from "@tanstack/react-query";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+
+const API_URL = "http://localhost:5000/api/auth";
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    profilePic: null,
-  });
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [otpEmail, setOtpEmail] = useState("");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // ✅ Auto logout if token expired
   useEffect(() => {
     const checkToken = () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) return;
-
       try {
-        const decoded = JSON.parse(atob(token.split('.')[1]));
+        const decoded = JSON.parse(atob(token.split(".")[1]));
         if (decoded.exp * 1000 < Date.now()) {
-          alert('Session expired. Please login again.');
+          alert("Session expired. Please login again.");
           localStorage.clear();
-          navigate('/');
+          navigate("/");
         }
       } catch {
-        alert('Invalid token. Please login again.');
+        alert("Invalid token. Please login again.");
         localStorage.clear();
-        navigate('/');
+        navigate("/");
       }
     };
 
@@ -45,128 +45,95 @@ const Login = () => {
     return () => clearInterval(interval);
   }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-
-    if (name === 'profilePic' && files?.[0]) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, profilePic: reader.result }));
+  // ✅ React Query Mutations
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }) => {
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Login failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      const user = {
+        ...data.user,
+        profilePic: data.user.profilePic || null,
+        isAdmin: data.isAdmin || false,
       };
-      reader.readAsDataURL(files[0]);
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+      dispatch(loginSuccess({ user, token: data.token }));
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("isAdmin", user.isAdmin ? "true" : "false");
+      navigate(user.isAdmin ? "/admin" : "/home");
+    },
+    onError: (error) => alert(error.message),
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const sendOtpMutation = useMutation({
+    mutationFn: async ({ email }) => {
+      const res = await fetch(`${API_URL}/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success)
+        throw new Error(data.message || "Failed to send OTP");
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      setOtpEmail(variables.email);
+      setShowOtpModal(true);
+    },
+    onError: (error) => alert(error.message),
+  });
 
-    if (isSignIn) {
-      try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.error || 'Something went wrong');
-          return;
-        }
-
-        const user = {
-          ...data.user,
-          profilePic: data.user.profilePic || formData.profilePic || null,
-          isAdmin: data.isAdmin || false,
-        };
-
-        dispatch(loginSuccess({ user, token: data.token }));
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
-
-        navigate(data.isAdmin ? '/admin' : '/home');
-      } catch (error) {
-        console.error('Login error:', error);
-        alert('Server error. Please try again.');
-      }
-    } else {
-      try {
-        const res = await fetch('http://localhost:5000/api/auth/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          alert(data.message || 'Failed to send OTP');
-          return;
-        }
-
-        setShowOtpModal(true);
-      } catch (error) {
-        console.error('OTP error:', error);
-        alert('Failed to send OTP');
-      }
-    }
-  };
-
-  const handleOtpSuccess = async () => {
-    try {
-      const registerRes = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+  const registerMutation = useMutation({
+    mutationFn: async (formData) => {
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
-      const registerData = await registerRes.json();
-
-      if (!registerRes.ok) {
-        alert(registerData.error || 'Registration failed');
-        return;
-      }
-
-      alert('Registration successful! Please sign in.');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Registration failed");
+      return data;
+    },
+    onSuccess: () => {
+      alert("Registration successful! Please sign in.");
       setIsSignIn(true);
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('Server error during registration');
-    }
+    },
+    onError: (error) => alert(error.message),
+  });
+
+  // ✅ Yup Validation Schema
+  const validationSchema = Yup.object({
+    username: !isSignIn
+      ? Yup.string().required("Username is required")
+      : Yup.string(),
+    email: Yup.string()
+      .email("Invalid email format")
+      .required("Email is required"),
+    password: Yup.string()
+      .min(6, "Password must be at least 6 characters")
+      .required("Password is required"),
+  });
+
+  // ✅ Forgot password handler (Formik-aware)
+  const handleForgotPassword = async (validateForm, setTouched, email) => {
+    setTouched({ email: true }); // show error if empty
+    const errors = await validateForm();
+    if (errors.email) return; // stop if invalid email
+
+    sendOtpMutation.mutate({ email });
   };
 
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
-      alert('Please enter your email first');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        alert(data.message || 'Failed to send OTP');
-        return;
-      }
-
-      setShowOtpModal(true);
-    } catch (error) {
-      console.error('Forgot password OTP error:', error);
-      alert('Failed to send OTP');
-    }
+  // ✅ OTP handlers
+  const handleOtpSuccess = (values) => {
+    registerMutation.mutate(values);
   };
 
   const handleOtpForResetSuccess = () => {
@@ -181,113 +148,155 @@ const Login = () => {
     >
       <div className="bg-white/60 backdrop-blur-md p-10 rounded-3xl shadow-lg w-full max-w-md mt-20">
         <h1 className="text-4xl text-center font-bold text-black">
-          {isSignIn ? 'SIGN IN' : 'SIGN UP'}
+          {isSignIn ? "SIGN IN" : "SIGN UP"}
         </h1>
         <div
           className="h-2 w-10 bg-black rounded-full mx-auto my-4 transition-transform duration-500"
-          style={{ transform: isSignIn ? 'translateX(35px)' : 'translateX(0px)' }}
+          style={{
+            transform: isSignIn ? "translateX(35px)" : "translateX(0px)",
+          }}
         ></div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isSignIn && (
-            <>
+        <Formik
+          initialValues={{ username: "", email: "", password: "", profilePic: null }}
+          validationSchema={validationSchema}
+          onSubmit={(values) => {
+            if (isSignIn) {
+              loginMutation.mutate({
+                email: values.email,
+                password: values.password,
+              });
+            } else {
+              sendOtpMutation.mutate({ email: values.email });
+            }
+          }}
+        >
+          {({ setFieldValue, values, validateForm, setTouched }) => (
+            <Form className="space-y-4">
+              {!isSignIn && (
+                <>
+                  <div className="flex items-center bg-gray-100 p-3 rounded-md">
+                    <FaUser className="text-gray-500 mr-2" />
+                    <Field
+                      type="text"
+                      name="username"
+                      placeholder="Username"
+                      className="bg-transparent flex-1 outline-none text-lg"
+                    />
+                  </div>
+                  <ErrorMessage
+                    name="username"
+                    component="div"
+                    className="text-red-500 text-sm"
+                  />
+
+                  <div className="flex items-center bg-gray-100 p-3 rounded-md">
+                    <input
+                      type="file"
+                      name="profilePic"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files[0]) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFieldValue("profilePic", reader.result);
+                          };
+                          reader.readAsDataURL(e.target.files[0]);
+                        }
+                      }}
+                      className="text-sm text-gray-700"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="flex items-center bg-gray-100 p-3 rounded-md">
-                <FaUser className="text-gray-500 mr-2" />
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Username"
+                <FaAt className="text-gray-500 mr-2" />
+                <Field
+                  type="email"
+                  name="email"
+                  placeholder="Email"
                   className="bg-transparent flex-1 outline-none text-lg"
-                  required
                 />
               </div>
+              <ErrorMessage
+                name="email"
+                component="div"
+                className="text-red-500 text-sm"
+              />
 
               <div className="flex items-center bg-gray-100 p-3 rounded-md">
-                <input
-                  type="file"
-                  name="profilePic"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className="text-sm text-gray-700"
+                <FaLock className="text-gray-500 mr-2" />
+                <Field
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  className="bg-transparent flex-1 outline-none text-lg"
                 />
               </div>
-            </>
-          )}
+              <ErrorMessage
+                name="password"
+                component="div"
+                className="text-red-500 text-sm"
+              />
 
-          <div className="flex items-center bg-gray-100 p-3 rounded-md">
-            <FaAt className="text-gray-500 mr-2" />
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email"
-              className="bg-transparent flex-1 outline-none text-lg"
-              required
-            />
-          </div>
+              {isSignIn && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleForgotPassword(validateForm, setTouched, values.email)
+                    }
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
 
-          <div className="flex items-center bg-gray-100 p-3 rounded-md">
-            <FaLock className="text-gray-500 mr-2" />
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Password"
-              className="bg-transparent flex-1 outline-none text-lg"
-              required
-            />
-          </div>
-
-          {isSignIn && (
-            <div className="text-right">
               <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-sm text-blue-600 hover:underline"
+                type="submit"
+                disabled={loginMutation.isPending || sendOtpMutation.isPending}
+                className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
               >
-                Forgot Password?
+                {isSignIn
+                  ? loginMutation.isPending
+                    ? "Logging in..."
+                    : "Login"
+                  : sendOtpMutation.isPending
+                  ? "Sending OTP..."
+                  : "Register"}
               </button>
-            </div>
+            </Form>
           )}
-
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
-          >
-            {isSignIn ? 'Login' : 'Register'}
-          </button>
-        </form>
+        </Formik>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            {isSignIn ? "Don't have an account?" : 'Already have an account?'}
+            {isSignIn ? "Don't have an account?" : "Already have an account?"}
           </p>
           <button
             onClick={() => setIsSignIn(!isSignIn)}
-                        className="text-black font-semibold mt-1 cursor-pointer"
+            className="text-black font-semibold mt-1 cursor-pointer"
           >
-            {isSignIn ? 'Go to Sign Up' : 'Go to Sign In'}
+            {isSignIn ? "Go to Sign Up" : "Go to Sign In"}
           </button>
         </div>
       </div>
 
-      {/*    OTP Modal for Forgot Password */}
+      {/* OTP Modal */}
       {showOtpModal && (
         <OtpModal
-          email={formData.email}
+          email={otpEmail}
           onSuccess={isSignIn ? handleOtpForResetSuccess : handleOtpSuccess}
           onClose={() => setShowOtpModal(false)}
         />
       )}
 
-      {/*    Reset Password Modal */}
+      {/* Reset Password Modal */}
       {showResetModal && (
         <ResetPassword
-          email={formData.email}
+          email={otpEmail}
           onClose={() => setShowResetModal(false)}
         />
       )}

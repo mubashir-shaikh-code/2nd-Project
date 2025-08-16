@@ -76,7 +76,7 @@ const UserPanel = () => {
     queryFn: fetchUserProducts,
     enabled: !!user,
   });
-
+  
   const {
     data: orders = [],
     isError: orderError,

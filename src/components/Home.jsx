@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import hero from '../assets/hero.jpg';
 import PostProduct from './PostProduct';
-import { useAllProducts } from '../Redux/Slices/ProductSlice'; //    React Query hook
+import { useAllProducts } from '../Redux/Slices/ProductSlice'; 
 
 const Home = () => {
   const [showModal, setShowModal] = useState(false);
@@ -19,7 +19,7 @@ const Home = () => {
 
   const handlePostClick = () => {
     if (!user) {
-      alert('Please login first to add items to cart');
+      alert('Please login first to post a product.');
       navigate('/login');
       return;
     }
