@@ -8,7 +8,7 @@ const authHeaders = (token) => ({
   headers: { Authorization: `Bearer ${token}` },
 });
 
-// ✅ Place an order
+//    Place an order
 export const usePlaceOrder = () => {
   const queryClient = useQueryClient();
 
@@ -23,7 +23,7 @@ export const usePlaceOrder = () => {
   });
 };
 
-// ✅ Get orders for logged-in user
+//    Get orders for logged-in user
 export const useUserOrders = (token) =>
   useQuery({
     queryKey: ['userOrders'],
@@ -34,7 +34,7 @@ export const useUserOrders = (token) =>
     enabled: !!token,
   });
 
-// ✅ Request cancellation
+//    Request cancellation
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
 
@@ -50,7 +50,7 @@ export const useCancelOrder = () => {
   });
 };
 
-// ✅ Admin: Get all orders
+//    Admin: Get all orders
 export const useAdminOrders = (token) =>
   useQuery({
     queryKey: ['adminOrders'],
@@ -61,7 +61,7 @@ export const useAdminOrders = (token) =>
     enabled: !!token,
   });
 
-// ✅ Admin: Update order status
+//    Admin: Update order status
 export const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
 

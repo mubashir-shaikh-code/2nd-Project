@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import hero from '../assets/hero.jpg';
 import PostProduct from './PostProduct';
-import { useAllProducts } from '../Redux/Slices/ProductSlice'; // ✅ React Query hook
+import { useAllProducts } from '../Redux/Slices/ProductSlice'; //    React Query hook
 
 const Home = () => {
   const [showModal, setShowModal] = useState(false);
@@ -15,7 +15,7 @@ const Home = () => {
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  const { data: allProducts = [], isLoading, isError, error } = useAllProducts(); // ✅ React Query
+  const { data: allProducts = [], isLoading, isError, error } = useAllProducts(); //    React Query
 
   const handlePostClick = () => {
     if (!user) {

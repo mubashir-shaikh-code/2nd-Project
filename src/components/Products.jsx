@@ -15,7 +15,7 @@ const Products = () => {
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // ✅ React Query: Fetch products from slice
+  //    React Query: Fetch products from slice
   const {
     data: allProducts = [],
     isLoading,
@@ -32,7 +32,7 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
-  // ✅ Filtering products by category + search term
+  //    Filtering products by category + search term
   const filteredProducts = Array.isArray(allProducts)
     ? allProducts.filter((p) => {
         const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const BASE_URL = 'http://localhost:5000/api/products';
 
-// ✅ Fetch all approved products
+//    Fetch all approved products
 export const useAllProducts = () =>
   useQuery({
     queryKey: ['allProducts'],
@@ -13,7 +13,7 @@ export const useAllProducts = () =>
     },
   });
 
-// ✅ Fetch products of the logged-in user
+//    Fetch products of the logged-in user
 export const useUserProducts = (userEmail) =>
   useQuery({
     queryKey: ['userProducts', userEmail],
@@ -25,7 +25,7 @@ export const useUserProducts = (userEmail) =>
     enabled: !!userEmail,
   });
 
-// ✅ Post a new product
+//    Post a new product
 export const usePostProduct = () => {
   const queryClient = useQueryClient();
 
@@ -50,7 +50,7 @@ export const usePostProduct = () => {
   });
 };
 
-// ✅ Update an existing product
+//    Update an existing product
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 

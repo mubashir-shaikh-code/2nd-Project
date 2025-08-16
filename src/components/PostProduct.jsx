@@ -1,7 +1,7 @@
 // src/components/PostProduct.jsx
 import React, { useState } from 'react';
 import { FaPen, FaDollarSign, FaImage, FaTags } from 'react-icons/fa';
-import { usePostProduct } from '../Redux/Slices/ProductSlice'; // ✅ React Query hook
+import { usePostProduct } from '../Redux/Slices/ProductSlice'; //    React Query hook
 import bgImage from '../assets/hero.jpg';
 
 const PostProduct = ({ show, onClose }) => {
@@ -20,7 +20,7 @@ const PostProduct = ({ show, onClose }) => {
     isLoading,
     isError,
     error,
-  } = usePostProduct(); // ✅ React Query mutation
+  } = usePostProduct(); //    React Query mutation
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFromCart, addToCart } from '../Redux/Slices/CartSlice';
-import { usePlaceOrder } from '../Redux/Slices/OrderSlice'; // ✅ React Query hook
+import { usePlaceOrder } from '../Redux/Slices/OrderSlice'; //    React Query hook
 
 const Cart = ({ clear }) => {
   const dispatch = useDispatch();
@@ -13,7 +13,7 @@ const Cart = ({ clear }) => {
     isLoading,
     isError,
     error,
-  } = usePlaceOrder(); // ✅ React Query mutation
+  } = usePlaceOrder(); //    React Query mutation
 
   const increment = (item) => {
     dispatch(addToCart(item));

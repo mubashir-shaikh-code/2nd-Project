@@ -81,7 +81,7 @@ const AdminPanel = () => {
   const [statusMap, setStatusMap] = useState({});
 
   
-  // Queries — ✅ Updated to object form
+  // Queries —    Updated to object form
 const { data: approvedProducts = [] } = useQuery({
   queryKey: ['approvedProducts'],
   queryFn: fetchApprovedProducts,

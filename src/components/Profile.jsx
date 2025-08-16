@@ -26,7 +26,7 @@ const Profile = () => {
   });
   const [previewPic, setPreviewPic] = useState('');
 
-  // ✅ Fetch profile data
+  //    Fetch profile data
   const { isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -45,7 +45,7 @@ const Profile = () => {
     enabled: !!token,
   });
 
-  // ✅ Update profile mutation
+  //    Update profile mutation
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
       const { data } = await axios.put(`${API_BASE}/api/auth/profile`, formData, {

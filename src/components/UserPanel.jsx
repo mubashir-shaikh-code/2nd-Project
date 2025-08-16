@@ -29,7 +29,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
 
-// ✅ Inline API functions
+//    Inline API functions
 const fetchUserProducts = async () => {
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -67,7 +67,7 @@ const UserPanel = () => {
   const user = useSelector((state) => state.auth.user);
   const [selectedTab, setSelectedTab] = useState('pending');
 
-  // ✅ React Query v5-compliant queries
+  //    React Query v5-compliant queries
   const {
     data: products = [],
     isError: productError,

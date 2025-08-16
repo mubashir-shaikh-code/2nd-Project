@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../Redux/Slices/AuthSlice';
 import OtpModal from './OtpModal';
-import ResetPassword from './ResetPassword'; // ✅ New modal
+import ResetPassword from './ResetPassword'; //    New modal
 
 const Login = () => {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -275,7 +275,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* ✅ OTP Modal for Forgot Password */}
+      {/*    OTP Modal for Forgot Password */}
       {showOtpModal && (
         <OtpModal
           email={formData.email}
@@ -284,7 +284,7 @@ const Login = () => {
         />
       )}
 
-      {/* ✅ Reset Password Modal */}
+      {/*    Reset Password Modal */}
       {showResetModal && (
         <ResetPassword
           email={formData.email}
