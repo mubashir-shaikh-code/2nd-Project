@@ -29,6 +29,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
 
+// ✅ Inline API functions
 const fetchUserProducts = async () => {
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -64,28 +65,38 @@ const UserPanel = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const user = useSelector((state) => state.auth.user);
-
   const [selectedTab, setSelectedTab] = useState('pending');
 
+  // ✅ React Query v5-compliant queries
   const {
     data: products = [],
     isError: productError,
-  } = useQuery(['userProducts'], fetchUserProducts);
+  } = useQuery({
+    queryKey: ['userProducts'],
+    queryFn: fetchUserProducts,
+    enabled: !!user,
+  });
 
   const {
     data: orders = [],
     isError: orderError,
-  } = useQuery(['userOrders'], fetchUserOrders);
+  } = useQuery({
+    queryKey: ['userOrders'],
+    queryFn: fetchUserOrders,
+    enabled: !!user,
+  });
 
-  const cancelOrderMutation = useMutation(requestOrderCancellationAPI, {
+  const cancelOrderMutation = useMutation({
+    mutationFn: requestOrderCancellationAPI,
     onSuccess: () => {
-      queryClient.invalidateQueries(['userOrders']);
+      queryClient.invalidateQueries({ queryKey: ['userOrders'] });
     },
   });
 
-  const deleteProductMutation = useMutation(deleteProductAPI, {
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteProductAPI,
     onSuccess: () => {
-      queryClient.invalidateQueries(['userProducts']);
+      queryClient.invalidateQueries({ queryKey: ['userProducts'] });
     },
   });
 
@@ -276,14 +287,14 @@ const UserPanel = () => {
               selected={selectedTab === 'orders'}
               onClick={() => setSelectedTab('orders')}
             >
-                            <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
+              <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="My Orders" />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding>
             <ListItemButton onClick={logout}>
-              <LogoutIcon sx={{ mr: 1, color: 'white' }} />
+                            <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
             </ListItemButton>
           </ListItem>

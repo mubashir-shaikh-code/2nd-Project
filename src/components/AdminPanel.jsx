@@ -80,30 +80,49 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [statusMap, setStatusMap] = useState({});
 
-  // Queries
-  const { data: approvedProducts = [] } = useQuery(['approvedProducts'], fetchApprovedProducts);
-  const { data: pendingProducts = [] } = useQuery(['pendingProducts'], fetchPendingProducts);
-  const { data: orders = [] } = useQuery(['adminOrders'], fetchOrders);
+  
+  // Queries — ✅ Updated to object form
+const { data: approvedProducts = [] } = useQuery({
+  queryKey: ['approvedProducts'],
+  queryFn: fetchApprovedProducts,
+});
+
+const { data: pendingProducts = [] } = useQuery({
+  queryKey: ['pendingProducts'],
+  queryFn: fetchPendingProducts,
+});
+
+const { data: orders = [] } = useQuery({
+  queryKey: ['adminOrders'],
+  queryFn: fetchOrders,
+});
+
 
   // Mutations
-  const approveProduct = useMutation(approveProductAPI, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['pendingProducts']);
-      queryClient.invalidateQueries(['approvedProducts']);
-    },
-  });
+ const approveProduct = useMutation({
+  mutationFn: approveProductAPI,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+    queryClient.invalidateQueries({ queryKey: ['approvedProducts'] });
+  },
+});
 
-  const rejectProduct = useMutation(rejectProductAPI, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['pendingProducts']);
-    },
-  });
 
-  const updateOrderStatus = useMutation(updateOrderStatusAPI, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['adminOrders']);
-    },
-  });
+const rejectProduct = useMutation({
+  mutationFn: rejectProductAPI,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+  },
+});
+
+
+ const updateOrderStatus = useMutation({
+  mutationFn: updateOrderStatusAPI,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+  },
+});
+
 
   // Auth check
   React.useEffect(() => {

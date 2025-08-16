@@ -1,35 +1,27 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../Redux/Slices/CartSlice';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAllProducts } from '../Redux/Slices/ProductSlice';
 
 const Products = () => {
   const dispatch = useDispatch();
-  const location = useLocation();
   const navigate = useNavigate();
 
-  const user = useSelector((state) => state.auth.user); // Get logged-in user
+  const user = useSelector((state) => state.auth.user); // Logged-in user
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // ✅ React Query: Fetch products
+  // ✅ React Query: Fetch products from slice
   const {
     data: allProducts = [],
     isLoading,
     isError,
     error,
-  } = useQuery({
-    queryKey: ['products', location.pathname],
-  queryFn : async () => {
-  const res = await axios.get('/api/products');
-  return Array.isArray(res.data) ? res.data : [];
-},
-  });
+  } = useAllProducts();
 
   const handleAddToCart = (item) => {
     if (!user) {
@@ -40,6 +32,7 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
+  // ✅ Filtering products by category + search term
   const filteredProducts = Array.isArray(allProducts)
     ? allProducts.filter((p) => {
         const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
