@@ -3,25 +3,30 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../Redux/Slices/CartSlice';
 import { useNavigate } from 'react-router-dom';
 import { useAllProducts } from '../Redux/Slices/ProductSlice';
+import ProductModal from './ProductModal'; // ✅ Import new modal
 
 const Products = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const user = useSelector((state) => state.auth.user); // Logged-in user
+  const user = useSelector((state) => state.auth.user); 
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ✅ New state for modal
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  //    React Query: Fetch products from slice
+  // React Query: Fetch products from slice with page
   const {
-    data: allProducts = [],
+    data: productsData = { products: [], totalPages: 1 },
     isLoading,
     isError,
     error,
-  } = useAllProducts();
+  } = useAllProducts(currentPage);
 
   const handleAddToCart = (item) => {
     if (!user) {
@@ -32,14 +37,20 @@ const Products = () => {
     dispatch(addToCart(item));
   };
 
-  //    Filtering products by category + search term
-  const filteredProducts = Array.isArray(allProducts)
-    ? allProducts.filter((p) => {
+  // Filter products by category + search term
+  const filteredProducts = Array.isArray(productsData.products)
+    ? productsData.products.filter((p) => {
         const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
         const matchesSearch = p.description?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
       })
     : [];
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= productsData.totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
     <div className="min-h-screen pt-32 pb-16 px-4">
@@ -79,29 +90,81 @@ const Products = () => {
       ) : filteredProducts.length === 0 ? (
         <p className="text-center text-gray-600">No products found.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filteredProducts.map((item, i) => (
-            <div
-              key={i}
-              className="border p-4 rounded-xl shadow text-center flex flex-col items-center"
-            >
-              <img
-                src={item.image}
-                alt={item.description || 'Product Image'}
-                className="h-40 object-cover mb-4 rounded"
-              />
-              <p className="font-semibold">{item.description || 'No description'}</p>
-              <p className="text-gray-500 mb-2">Category: {item.category || 'N/A'}</p>
-              <p className="text-lg font-bold">${item.price ?? 'N/A'}</p>
-              <button
-                onClick={() => handleAddToCart(item)}
-                className="mt-3 bg-black text-white px-4 py-1 rounded hover:bg-gray-800"
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {filteredProducts.map((item, i) => (
+              <div
+                key={i}
+                className="border p-4 rounded-xl shadow text-center flex flex-col items-center"
               >
-                Add to Cart
+                <img
+                  src={item.image}
+                  alt={item.description || 'Product Image'}
+                  className="h-40 object-cover mb-4 rounded"
+                />
+                <p className="font-semibold">{item.description || 'No description'}</p>
+                <p className="text-gray-500 mb-2">Category: {item.category || 'N/A'}</p>
+                <p className="text-lg font-bold">${item.price ?? 'N/A'}</p>
+
+                {/* Buttons Section */}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => handleAddToCart(item)}
+                    className="bg-black text-white px-4 py-1 rounded hover:bg-gray-800"
+                  >
+                    Add to Cart
+                  </button>
+
+                  {/* ✅ View Details Button (opens modal) */}
+                  <button
+                    onClick={() => setSelectedProduct(item)}
+                    className="bg-gray-200 text-black px-4 py-1 rounded hover:bg-gray-300"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/*Pagination*/}
+          <div className="flex justify-center gap-2 mt-8">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: productsData.totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => goToPage(i + 1)}
+                className={`px-3 py-1 border rounded ${
+                  currentPage === i + 1 ? 'bg-black text-white' : ''
+                }`}
+              >
+                {i + 1}
               </button>
-            </div>
-          ))}
-        </div>
+            ))}
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === productsData.totalPages}
+              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ✅ Use ProductModal Component */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
       )}
     </div>
   );

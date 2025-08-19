@@ -3,11 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const BASE_URL = 'http://localhost:5000/api/products';
 
 //    Fetch all approved products
-export const useAllProducts = () =>
+export const useAllProducts = (page = 1) =>
   useQuery({
-    queryKey: ['allProducts'],
+    queryKey: ['allProducts', page],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}`);
+      const res = await fetch(`${BASE_URL}?page=${page}`);
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
     },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFromCart, addToCart } from '../Redux/Slices/CartSlice';
-import { usePlaceOrder } from '../Redux/Slices/OrderSlice'; //    React Query hook
+import { usePlaceOrder } from '../Redux/Slices/OrderSlice'; // React Query hook
 
 const Cart = ({ clear }) => {
   const dispatch = useDispatch();
@@ -13,7 +13,7 @@ const Cart = ({ clear }) => {
     isLoading,
     isError,
     error,
-  } = usePlaceOrder(); //    React Query mutation
+  } = usePlaceOrder(); // React Query mutation
 
   const increment = (item) => {
     dispatch(addToCart(item));
@@ -39,32 +39,38 @@ const Cart = ({ clear }) => {
 
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user'));
 
-    if (!token) {
+    if (!token || !user) {
       alert('Please log in to place an order.');
       return;
     }
 
     try {
-      for (let i = 0; i < cartItems.length; i++) {
-        const orderData = {
-          productId: cartItems[i]._id,
-          price: cartItems[i].price * cartItems[i].quantity,
-        };
+      const orderData = {
+        userEmail: user.email,
+        items: cartItems.map((item) => ({
+          productId: item._id,
+          title: item.title,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        totalPrice: total(),
+      };
 
-        await new Promise((resolve, reject) => {
-          placeOrder(
-            { orderData, token },
-            {
-              onSuccess: resolve,
-              onError: reject,
-            }
-          );
-        });
-      }
-
-      setOrderPlaced(true);
-      clear();
+      placeOrder(
+        { orderData, token },
+        {
+          onSuccess: () => {
+            setOrderPlaced(true);
+            clear();
+          },
+          onError: (err) => {
+            console.error('Order placement failed:', err);
+            alert(err.message || 'Something went wrong while placing your order.');
+          },
+        }
+      );
     } catch (err) {
       console.error('Order placement failed:', err);
       alert(err.message || 'Something went wrong while placing your order.');
@@ -118,8 +124,12 @@ const Cart = ({ clear }) => {
           ))}
 
           <div className="mt-10 text-xl">
-            <p>Total Products: <strong>{cartItems.length}</strong></p>
-            <p>Total Price: <strong>${total().toFixed(2)}</strong></p>
+            <p>
+              Total Products: <strong>{cartItems.length}</strong>
+            </p>
+            <p>
+              Total Price: <strong>${total().toFixed(2)}</strong>
+            </p>
           </div>
 
           <div className="flex justify-center gap-4 mt-6">

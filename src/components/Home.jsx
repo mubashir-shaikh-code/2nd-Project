@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import hero from '../assets/hero.jpg';
 import PostProduct from './PostProduct';
-import { useAllProducts } from '../Redux/Slices/ProductSlice'; 
+import { useAllProducts } from '../Redux/Slices/ProductSlice';
 
 const Home = () => {
   const [showModal, setShowModal] = useState(false);
@@ -15,7 +15,11 @@ const Home = () => {
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  const { data: allProducts = [], isLoading, isError, error } = useAllProducts(); //    React Query
+  // Fetch page 1 by default (you can change page later for pagination)
+  const { data: productsData = {}, isLoading, isError, error } = useAllProducts(1);
+
+  // Extract products array safely
+  const allProducts = Array.isArray(productsData.products) ? productsData.products : [];
 
   const handlePostClick = () => {
     if (!user) {
@@ -56,7 +60,11 @@ const Home = () => {
           </p>
         )}
 
-        {!isLoading && !isError && (
+        {!isLoading && !isError && allProducts.length === 0 && (
+          <p className="text-center text-gray-500">No products found.</p>
+        )}
+
+        {!isLoading && !isError && allProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {allProducts.slice(0, 4).map((product) => (
               <div
@@ -66,7 +74,7 @@ const Home = () => {
                 {product.image && (
                   <img
                     src={product.image}
-                    alt={product.name}
+                    alt={product.description}
                     className="h-40 object-cover mb-4 rounded"
                   />
                 )}
