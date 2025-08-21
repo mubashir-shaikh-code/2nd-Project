@@ -17,6 +17,7 @@ const Login = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
+  const [pendingUser, setPendingUser] = useState(null); // ✅ store signup values
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -105,6 +106,7 @@ const Login = () => {
     onSuccess: () => {
       alert("Registration successful! Please sign in.");
       setIsSignIn(true);
+      setPendingUser(null); // ✅ clear after register
     },
     onError: (error) => alert(error.message),
   });
@@ -122,7 +124,7 @@ const Login = () => {
       .required("Password is required"),
   });
 
-  // ✅ Forgot password handler (Formik-aware)
+  // ✅ Forgot password handler
   const handleForgotPassword = async (validateForm, setTouched, email) => {
     setTouched({ email: true }); // show error if empty
     const errors = await validateForm();
@@ -132,8 +134,11 @@ const Login = () => {
   };
 
   // ✅ OTP handlers
-  const handleOtpSuccess = (values) => {
-    registerMutation.mutate(values);
+  const handleOtpSuccess = () => {
+    if (pendingUser) {
+      registerMutation.mutate(pendingUser);
+      setShowOtpModal(false);
+    }
   };
 
   const handleOtpForResetSuccess = () => {
@@ -158,7 +163,12 @@ const Login = () => {
         ></div>
 
         <Formik
-          initialValues={{ username: "", email: "", password: "", profilePic: null }}
+          initialValues={{
+            username: "",
+            email: "",
+            password: "",
+            profilePic: null,
+          }}
           validationSchema={validationSchema}
           onSubmit={(values) => {
             if (isSignIn) {
@@ -167,6 +177,7 @@ const Login = () => {
                 password: values.password,
               });
             } else {
+              setPendingUser(values); // ✅ save signup values
               sendOtpMutation.mutate({ email: values.email });
             }
           }}

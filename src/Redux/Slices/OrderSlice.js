@@ -1,20 +1,24 @@
+// src/Redux/Slices/OrderSlice.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000/api/orders';
 
-// Axios helper
-const authHeaders = (token) => ({
-  headers: { Authorization: `Bearer ${token}` },
-});
+// ✅ Helper to always attach token from localStorage
+const authHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    headers: { Authorization: `Bearer ${token}` },
+  };
+};
 
-//    Place an order
+// ✅ Place an order
 export const usePlaceOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderData, token }) => {
-      const res = await axios.post(`${BASE_URL}/place`, orderData, authHeaders(token));
+    mutationFn: async (orderData) => {
+      const res = await axios.post(`${BASE_URL}/place`, orderData, authHeaders());
       return res.data;
     },
     onSuccess: () => {
@@ -23,24 +27,28 @@ export const usePlaceOrder = () => {
   });
 };
 
-//    Get orders for logged-in user
-export const useUserOrders = (token) =>
+// ✅ Get orders for logged-in user
+export const useUserOrders = () =>
   useQuery({
     queryKey: ['userOrders'],
     queryFn: async () => {
-      const res = await axios.get(`${BASE_URL}/user`, authHeaders(token));
+      const res = await axios.get(`${BASE_URL}/user`, authHeaders());
       return res.data;
     },
-    enabled: !!token,
+    enabled: !!localStorage.getItem('token'),
   });
 
-//    Request cancellation
+// ✅ Request cancellation
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, token }) => {
-      const res = await axios.patch(`${BASE_URL}/cancel/${orderId}`, {}, authHeaders(token));
+    mutationFn: async (orderId) => {
+      const res = await axios.patch(
+        `${BASE_URL}/cancel/${orderId}`,
+        {},
+        authHeaders()
+      );
       return { orderId, message: res.data.message };
     },
     onSuccess: () => {
@@ -50,24 +58,28 @@ export const useCancelOrder = () => {
   });
 };
 
-//    Admin: Get all orders
-export const useAdminOrders = (token) =>
+// ✅ Admin: Get all orders
+export const useAdminOrders = () =>
   useQuery({
     queryKey: ['adminOrders'],
     queryFn: async () => {
-      const res = await axios.get(`${BASE_URL}/admin`, authHeaders(token));
+      const res = await axios.get(`${BASE_URL}/admin`, authHeaders());
       return res.data;
     },
-    enabled: !!token,
+    enabled: !!localStorage.getItem('token'),
   });
 
-//    Admin: Update order status
+// ✅ Admin: Update order status
 export const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, status, token }) => {
-      const res = await axios.put(`${BASE_URL}/admin/${orderId}`, { status }, authHeaders(token));
+    mutationFn: async ({ orderId, status }) => {
+      const res = await axios.put(
+        `${BASE_URL}/admin/${orderId}`,
+        { status },
+        authHeaders()
+      );
       return res.data;
     },
     onSuccess: () => {

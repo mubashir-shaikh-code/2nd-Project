@@ -15,28 +15,33 @@ const Cart = ({ clear }) => {
     error,
   } = usePlaceOrder(); // React Query mutation
 
+  // ✅ Increase quantity
   const increment = (item) => {
     dispatch(addToCart(item));
   };
 
+  // ✅ Decrease quantity
   const decrement = (item) => {
     if (item.quantity > 1) {
-      dispatch({
-        type: 'cart/removeFromCart',
-        payload: item._id,
-      });
-      for (let i = 0; i < item.quantity - 1; i++) {
-        dispatch(addToCart(item));
+      const updatedItem = { ...item, quantity: item.quantity - 1 };
+      dispatch(removeFromCart(item._id || item.id));
+      if (updatedItem.quantity > 0) {
+        dispatch(addToCart(updatedItem));
       }
     } else {
-      dispatch(removeFromCart(item._id));
+      dispatch(removeFromCart(item._id || item.id));
     }
   };
 
+  // ✅ Total Price
   const total = () => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    return cartItems.reduce(
+      (acc, item) => acc + Number(item.price || 0) * (item.quantity || 1),
+      0
+    );
   };
 
+  // ✅ Place Order
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
@@ -47,32 +52,31 @@ const Cart = ({ clear }) => {
     }
 
     try {
+      // 🔥 Normalize items for backend
       const orderData = {
-        userEmail: user.email,
         items: cartItems.map((item) => ({
-          productId: item._id,
-          title: item.title,
-          price: item.price,
-          quantity: item.quantity,
+          productId: item.id || item._id, // ✅ prefer id (MySQL products table)
+          price: Number(item.price) || 0,
+          quantity: item.quantity || 1,
         })),
         totalPrice: total(),
       };
 
-      placeOrder(
-        { orderData, token },
-        {
-          onSuccess: () => {
-            setOrderPlaced(true);
-            clear();
-          },
-          onError: (err) => {
-            console.error('Order placement failed:', err);
-            alert(err.message || 'Something went wrong while placing your order.');
-          },
-        }
-      );
+      console.log("🛒 Cart items (raw):", cartItems);
+      console.log("📦 Final Order Payload (to backend):", orderData);
+
+      placeOrder(orderData, {
+        onSuccess: () => {
+          setOrderPlaced(true);
+          clear();
+        },
+        onError: (err) => {
+          console.error('❌ Order placement failed:', err);
+          alert(err.response?.data?.error || err.message || 'Something went wrong while placing your order.');
+        },
+      });
     } catch (err) {
-      console.error('Order placement failed:', err);
+      console.error('❌ Order placement failed:', err);
       alert(err.message || 'Something went wrong while placing your order.');
     }
   };
@@ -91,18 +95,20 @@ const Cart = ({ clear }) => {
         <>
           {cartItems.map((item, index) => (
             <div
-              key={index}
+              key={item._id || item.id || index}
               className="flex flex-wrap justify-between items-center border-b border-gray-300 py-4 max-w-3xl mx-auto"
             >
               <span className="w-6 text-gray-500">{index + 1}</span>
               <img
                 src={item.image}
-                alt={item.title}
+                alt={item.title || item.description}
                 className="w-10 h-10 object-cover rounded"
               />
-              <span className="hidden sm:inline w-32 truncate">{item.title}</span>
+              <span className="hidden sm:inline w-32 truncate">
+                {item.title || item.description}
+              </span>
               <span className="w-24 text-sm">
-                ${(item.price * item.quantity).toFixed(2)}
+                ${(Number(item.price || 0) * (item.quantity || 1)).toFixed(2)}
               </span>
 
               <div className="flex items-center gap-2">
@@ -150,7 +156,7 @@ const Cart = ({ clear }) => {
 
           {isError && (
             <p className="mt-4 text-red-600 text-sm">
-              {error?.message || 'Order failed. Please try again.'}
+              {error?.response?.data?.error || error?.message || 'Order failed. Please try again.'}
             </p>
           )}
         </>

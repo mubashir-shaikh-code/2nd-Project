@@ -29,7 +29,7 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
 
-//    Inline API functions
+// API calls
 const fetchUserProducts = async () => {
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -67,7 +67,7 @@ const UserPanel = () => {
   const user = useSelector((state) => state.auth.user);
   const [selectedTab, setSelectedTab] = useState('pending');
 
-  //    React Query v5-compliant queries
+  // Queries
   const {
     data: products = [],
     isError: productError,
@@ -76,7 +76,7 @@ const UserPanel = () => {
     queryFn: fetchUserProducts,
     enabled: !!user,
   });
-  
+
   const {
     data: orders = [],
     isError: orderError,
@@ -125,10 +125,9 @@ const UserPanel = () => {
     cancelOrderMutation.mutate(orderId);
   };
 
+  // Product Table (Pending/Approved)
   const renderProductTable = (products, isPending) => {
-    if (!products.length) {
-      return <Typography>No products found.</Typography>;
-    }
+    if (!products.length) return <Typography>No products found.</Typography>;
 
     return (
       <TableContainer component={Paper}>
@@ -144,18 +143,18 @@ const UserPanel = () => {
           </TableHead>
           <TableBody>
             {products.map((product) => (
-              <TableRow key={product._id}>
+              <TableRow key={product.id}>
                 <TableCell>{product.description}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>{product.status}</TableCell>
+                <TableCell>{product.status || 'pending'}</TableCell>
                 {isPending && (
                   <TableCell>
                     <Button
                       variant="outlined"
                       color="primary"
                       size="small"
-                      onClick={() => handleEdit(product._id)}
+                      onClick={() => handleEdit(product.id)}
                       sx={{ mr: 1 }}
                     >
                       Edit
@@ -164,7 +163,7 @@ const UserPanel = () => {
                       variant="outlined"
                       color="error"
                       size="small"
-                      onClick={() => handleDelete(product._id)}
+                      onClick={() => handleDelete(product.id)}
                     >
                       Delete
                     </Button>
@@ -178,67 +177,62 @@ const UserPanel = () => {
     );
   };
 
+  // Orders Table
   const renderOrdersTable = () => {
-    const visibleOrders = orders.filter(order => !order.cancelApproved);
+  const visibleOrders = orders.filter(order => !order.cancelApproved);
 
-    if (!visibleOrders.length) {
-      return <Typography>No orders found.</Typography>;
-    }
+  if (!visibleOrders.length) return <Typography>No orders found.</Typography>;
 
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Product</strong></TableCell>
-              <TableCell><strong>Price</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-              <TableCell><strong>Cancel</strong></TableCell>
+  return (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Product</strong></TableCell>
+            <TableCell><strong>Paid Price</strong></TableCell>
+            <TableCell><strong>Status</strong></TableCell>
+            <TableCell><strong>Cancel</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {visibleOrders.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell>{order.description}</TableCell>
+              <TableCell>${order.orderPrice}</TableCell> {/* price from order */}
+              <TableCell>{order.status || 'pending'}</TableCell>
+              <TableCell>
+                {order.cancellationRequested ? (
+                  <Typography color="warning.main">Requested</Typography>
+                ) : (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handleCancelRequest(order.id)}
+                  >
+                    Request Cancel
+                  </Button>
+                )}
+              </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {visibleOrders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order.product?.description}</TableCell>
-                <TableCell>${order.price}</TableCell>
-                <TableCell>{order.status}</TableCell>
-                <TableCell>
-                  {order.cancellationRequested ? (
-                    <Typography color="warning.main">Requested</Typography>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => handleCancelRequest(order._id)}
-                    >
-                      Request Cancel
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
 
+
+  // Content switch
   const renderContent = () => {
-    if (productError || orderError) {
-      return <Typography color="error">Failed to load data.</Typography>;
-    }
+    if (productError || orderError) return <Typography color="error">Failed to load data.</Typography>;
 
     const pending = products.filter(p => p.status === 'pending');
     const approved = products.filter(p => p.status === 'approved');
 
-    if (selectedTab === 'pending') {
-      return renderProductTable(pending, true);
-    } else if (selectedTab === 'approved') {
-      return renderProductTable(approved, false);
-    } else if (selectedTab === 'orders') {
-      return renderOrdersTable();
-    }
+    if (selectedTab === 'pending') return renderProductTable(pending, true);
+    if (selectedTab === 'approved') return renderProductTable(approved, false);
+    if (selectedTab === 'orders') return renderOrdersTable();
   };
 
   return (
@@ -294,7 +288,7 @@ const UserPanel = () => {
 
           <ListItem disablePadding>
             <ListItemButton onClick={logout}>
-                            <LogoutIcon sx={{ mr: 1, color: 'white' }} />
+              <LogoutIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Logout" />
             </ListItemButton>
           </ListItem>

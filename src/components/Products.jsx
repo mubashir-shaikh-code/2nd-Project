@@ -1,32 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../Redux/Slices/CartSlice';
 import { useNavigate } from 'react-router-dom';
 import { useAllProducts } from '../Redux/Slices/ProductSlice';
-import ProductModal from './ProductModal'; // ✅ Import new modal
+import ProductModal from './ProductModal'; // ✅ Import modal
 
 const Products = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const user = useSelector((state) => state.auth.user); 
+  const user = useSelector((state) => state.auth.user);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ✅ New state for modal
+  // ✅ Modal state
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const categories = ['All', 'Electronics', 'Mens Clothing', 'Womens Clothing'];
 
-  // React Query: Fetch products from slice with page
+  // ✅ Fetch products with current page
   const {
     data: productsData = { products: [], totalPages: 1 },
     isLoading,
     isError,
     error,
+    refetch,
   } = useAllProducts(currentPage);
+
+  // ✅ Refetch products when page changes
+  useEffect(() => {
+    refetch();
+  }, [currentPage, refetch]);
 
   const handleAddToCart = (item) => {
     if (!user) {
@@ -86,7 +92,7 @@ const Products = () => {
       {isLoading ? (
         <p className="text-center text-gray-600">Loading...</p>
       ) : isError ? (
-        <p className="text-center text-red-600">{error.message}</p>
+        <p className="text-center text-red-600">{error?.message || 'Error fetching products'}</p>
       ) : filteredProducts.length === 0 ? (
         <p className="text-center text-gray-600">No products found.</p>
       ) : (
@@ -106,7 +112,7 @@ const Products = () => {
                 <p className="text-gray-500 mb-2">Category: {item.category || 'N/A'}</p>
                 <p className="text-lg font-bold">${item.price ?? 'N/A'}</p>
 
-                {/* Buttons Section */}
+                {/* Buttons */}
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => handleAddToCart(item)}
@@ -115,7 +121,7 @@ const Products = () => {
                     Add to Cart
                   </button>
 
-                  {/* ✅ View Details Button (opens modal) */}
+                  {/* View Details */}
                   <button
                     onClick={() => setSelectedProduct(item)}
                     className="bg-gray-200 text-black px-4 py-1 rounded hover:bg-gray-300"
@@ -127,7 +133,7 @@ const Products = () => {
             ))}
           </div>
 
-          {/*Pagination*/}
+          {/* Pagination */}
           <div className="flex justify-center gap-2 mt-8">
             <button
               onClick={() => goToPage(currentPage - 1)}
@@ -148,6 +154,7 @@ const Products = () => {
                 {i + 1}
               </button>
             ))}
+
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === productsData.totalPages}
@@ -159,7 +166,7 @@ const Products = () => {
         </>
       )}
 
-      {/* ✅ Use ProductModal Component */}
+      {/* Product Modal */}
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}

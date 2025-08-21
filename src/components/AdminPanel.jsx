@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   CssBaseline,
@@ -31,43 +31,52 @@ import { logout as logoutAction } from '../Redux/Slices/AuthSlice';
 
 const drawerWidth = 240;
 
+// ✅ Fetch APIs
 const fetchApprovedProducts = async () => {
   const res = await axios.get('http://localhost:5000/api/products');
-  return res.data;
+  return Array.isArray(res.data) ? res.data : res.data.products || [];
 };
 
 const fetchPendingProducts = async () => {
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
   const res = await axios.get('http://localhost:5000/api/products/pending', config);
-  return res.data;
+  return Array.isArray(res.data) ? res.data : res.data.products || [];
 };
 
 const fetchOrders = async () => {
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
   const res = await axios.get('http://localhost:5000/api/orders/admin', config);
-  return res.data;
+  // Backend returns array directly, not res.data.orders
+  return Array.isArray(res.data) ? res.data : [];
 };
 
+// ✅ Mutations
 const approveProductAPI = async (id) => {
   const token = localStorage.getItem('token');
-  await axios.patch(`http://localhost:5000/api/products/approve/${id}`, null, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await axios.patch(
+    `http://localhost:5000/api/products/approve/${id}`,
+    null,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
 };
 
 const rejectProductAPI = async (id) => {
   const token = localStorage.getItem('token');
-  await axios.patch(`http://localhost:5000/api/products/reject/${id}`, null, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await axios.patch(
+    `http://localhost:5000/api/products/reject/${id}`,
+    null,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
 };
 
 const updateOrderStatusAPI = async ({ orderId, status }) => {
   const token = localStorage.getItem('token');
-  await axios.patch(
-    `http://localhost:5000/api/orders/status/${orderId}`,
+  await axios.put(
+    `http://localhost:5000/api/orders/admin/${orderId}`,
     { status },
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -80,53 +89,47 @@ const AdminPanel = () => {
   const [selectedTab, setSelectedTab] = useState('pending');
   const [statusMap, setStatusMap] = useState({});
 
-  
-  // Queries —    Updated to object form
-const { data: approvedProducts = [] } = useQuery({
-  queryKey: ['approvedProducts'],
-  queryFn: fetchApprovedProducts,
-});
+  // ✅ Queries
+  const { data: approvedProducts = [] } = useQuery({
+    queryKey: ['approvedProducts'],
+    queryFn: fetchApprovedProducts,
+  });
 
-const { data: pendingProducts = [] } = useQuery({
-  queryKey: ['pendingProducts'],
-  queryFn: fetchPendingProducts,
-});
+  const { data: pendingProducts = [] } = useQuery({
+    queryKey: ['pendingProducts'],
+    queryFn: fetchPendingProducts,
+  });
 
-const { data: orders = [] } = useQuery({
-  queryKey: ['adminOrders'],
-  queryFn: fetchOrders,
-});
+  const { data: orders = [] } = useQuery({
+    queryKey: ['adminOrders'],
+    queryFn: fetchOrders,
+  });
 
+  // ✅ Mutations
+  const approveProduct = useMutation({
+    mutationFn: approveProductAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['approvedProducts'] });
+    },
+  });
 
-  // Mutations
- const approveProduct = useMutation({
-  mutationFn: approveProductAPI,
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
-    queryClient.invalidateQueries({ queryKey: ['approvedProducts'] });
-  },
-});
+  const rejectProduct = useMutation({
+    mutationFn: rejectProductAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
+    },
+  });
 
+  const updateOrderStatus = useMutation({
+    mutationFn: updateOrderStatusAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+    },
+  });
 
-const rejectProduct = useMutation({
-  mutationFn: rejectProductAPI,
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['pendingProducts'] });
-  },
-});
-
-
- const updateOrderStatus = useMutation({
-  mutationFn: updateOrderStatusAPI,
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
-  },
-});
-
-
-  // Auth check
-  React.useEffect(() => {
-    localStorage.setItem('token', 'admin-token');
+  // ✅ Auth check
+  useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
     if (isAdmin !== 'true') {
       navigate('/login');
@@ -158,11 +161,13 @@ const rejectProduct = useMutation({
     navigate('/');
   };
 
+  // ✅ Pending Products Table
   const renderPendingTable = () => (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell><strong>Image</strong></TableCell>
             <TableCell><strong>Description</strong></TableCell>
             <TableCell><strong>Price</strong></TableCell>
             <TableCell><strong>Category</strong></TableCell>
@@ -170,60 +175,58 @@ const rejectProduct = useMutation({
           </TableRow>
         </TableHead>
         <TableBody>
-          {pendingProducts.map((product) => (
-            <TableRow key={product._id}>
-              <TableCell>{product.description || 'N/A'}</TableCell>
-              <TableCell>${product.price || '0.00'}</TableCell>
-              <TableCell>{product.category || 'N/A'}</TableCell>
-              <TableCell>
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => approveProduct.mutate(product._id)}
-                  sx={{ mr: 1 }}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={() => rejectProduct.mutate(product._id)}
-                >
-                  Reject
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {pendingProducts.length > 0 ? (
+            pendingProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>{product.image ? <img src={product.image} alt="product" width="60" /> : 'N/A'}</TableCell>
+                <TableCell>{product.description || 'N/A'}</TableCell>
+                <TableCell>${product.price || '0.00'}</TableCell>
+                <TableCell>{product.category || 'N/A'}</TableCell>
+                <TableCell>
+                  <Button variant="contained" color="success" size="small" onClick={() => approveProduct.mutate(product.id)} sx={{ mr: 1 }}>Approve</Button>
+                  <Button variant="outlined" color="error" size="small" onClick={() => rejectProduct.mutate(product.id)}>Reject</Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow><TableCell colSpan={5} align="center">No pending products</TableCell></TableRow>
+          )}
         </TableBody>
       </Table>
     </TableContainer>
   );
 
+  // ✅ Approved Products Table
   const renderApprovedTable = () => (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell><strong>Image</strong></TableCell>
             <TableCell><strong>Description</strong></TableCell>
             <TableCell><strong>Price</strong></TableCell>
             <TableCell><strong>Category</strong></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {approvedProducts.map((product) => (
-            <TableRow key={product._id}>
-              <TableCell>{product.description || 'N/A'}</TableCell>
-              <TableCell>${product.price || '0.00'}</TableCell>
-              <TableCell>{product.category || 'N/A'}</TableCell>
-            </TableRow>
-          ))}
+          {approvedProducts.length > 0 ? (
+            approvedProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell>{product.image ? <img src={product.image} alt="product" width="60" /> : 'N/A'}</TableCell>
+                <TableCell>{product.description || 'N/A'}</TableCell>
+                <TableCell>${product.price || '0.00'}</TableCell>
+                <TableCell>{product.category || 'N/A'}</TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow><TableCell colSpan={4} align="center">No approved products</TableCell></TableRow>
+          )}
         </TableBody>
       </Table>
     </TableContainer>
   );
 
+  // ✅ Orders Table
   const renderOrdersTable = () => {
     const visibleOrders = orders.filter(order => !order.cancelApproved);
 
@@ -241,55 +244,38 @@ const rejectProduct = useMutation({
             </TableRow>
           </TableHead>
           <TableBody>
-            {visibleOrders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell>{order.product.description}</TableCell>
-                <TableCell>${order.price}</TableCell>
-                <TableCell>{order.user?.username}</TableCell>
-                <TableCell>
-                  <Select
-                    value={statusMap[order._id] || order.status}
-                    onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                    size="small"
-                  >
-                    <MenuItem value="Processing">Processing</MenuItem>
-                    <MenuItem value="Dispatched">Dispatched</MenuItem>
-                    <MenuItem value="Delivered">Delivered</MenuItem>
-                    <MenuItem value="Cancelled">Cancelled</MenuItem>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Button variant="contained" size="small" onClick={() => handleUpdateStatus(order._id)}>
-                                      Update
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  {order.cancelRequest ? (
-                    <>
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        size="small"
-                        onClick={() => handleApproveCancellation(order._id)}
-                        sx={{ mr: 1 }}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={handleRejectCancellation}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  ) : (
-                    <Typography color="text.secondary">No request</Typography>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+            {visibleOrders.length > 0 ? (
+              visibleOrders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.description || order.product?.description || 'N/A'}</TableCell>
+                  <TableCell>${order.orderPrice}</TableCell>
+                  <TableCell>{order.username || order.user?.username || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Select value={statusMap[order.id] || order.status} onChange={(e) => handleStatusChange(order.id, e.target.value)} size="small">
+                      <MenuItem value="Processing">Processing</MenuItem>
+                      <MenuItem value="Dispatched">Dispatched</MenuItem>
+                      <MenuItem value="Delivered">Delivered</MenuItem>
+                      <MenuItem value="Cancelled">Cancelled</MenuItem>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="contained" size="small" onClick={() => handleUpdateStatus(order.id)}>Update</Button>
+                  </TableCell>
+                  <TableCell>
+                    {order.cancelRequest ? (
+                      <>
+                        <Button variant="outlined" color="success" size="small" onClick={() => handleApproveCancellation(order.id)} sx={{ mr: 1 }}>Approve</Button>
+                        <Button variant="outlined" color="error" size="small" onClick={handleRejectCancellation}>Reject</Button>
+                      </>
+                    ) : (
+                      <Typography color="text.secondary">No request</Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow><TableCell colSpan={6} align="center">No orders found</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -299,54 +285,27 @@ const rejectProduct = useMutation({
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <Drawer
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: 250,
-            boxSizing: 'border-box',
-            backgroundColor: 'black',
-            color: 'white',
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-      >
-        <Typography variant="h5" sx={{ p: 2, color: 'white' }}>
-          LiFlow Admin Panel
-        </Typography>
+      <Drawer sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: 250, boxSizing: 'border-box', backgroundColor: 'black', color: 'white' }}} variant="permanent" anchor="left">
+        <Typography variant="h5" sx={{ p: 2, color: 'white' }}>LiFlow Admin Panel</Typography>
         <List>
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'pending'}
-              onClick={() => setSelectedTab('pending')}
-            >
+            <ListItemButton selected={selectedTab === 'pending'} onClick={() => setSelectedTab('pending')}>
               <PendingActionsIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Pending Products" />
             </ListItemButton>
           </ListItem>
-
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'approved'}
-              onClick={() => setSelectedTab('approved')}
-            >
+            <ListItemButton selected={selectedTab === 'approved'} onClick={() => setSelectedTab('approved')}>
               <CheckCircleIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Approved Products" />
             </ListItemButton>
           </ListItem>
-
           <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedTab === 'orders'}
-              onClick={() => setSelectedTab('orders')}
-            >
+            <ListItemButton selected={selectedTab === 'orders'} onClick={() => setSelectedTab('orders')}>
               <LocalShippingIcon sx={{ mr: 1, color: 'white' }} />
               <ListItemText primary="Delivery Orders" />
             </ListItemButton>
           </ListItem>
-
           <ListItem disablePadding>
             <ListItemButton onClick={logout}>
               <LogoutIcon sx={{ mr: 1, color: 'white' }} />
@@ -358,22 +317,12 @@ const rejectProduct = useMutation({
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          {selectedTab === 'pending'
-            ? 'Pending Products'
-            : selectedTab === 'approved'
-            ? 'Approved Products'
-            : 'Delivery Orders'}
+          {selectedTab === 'pending' ? 'Pending Products' : selectedTab === 'approved' ? 'Approved Products' : 'Delivery Orders'}
         </Typography>
-
-        {selectedTab === 'pending'
-          ? renderPendingTable()
-          : selectedTab === 'approved'
-          ? renderApprovedTable()
-          : renderOrdersTable()}
+        {selectedTab === 'pending' ? renderPendingTable() : selectedTab === 'approved' ? renderApprovedTable() : renderOrdersTable()}
       </Box>
     </Box>
   );
 };
 
 export default AdminPanel;
-

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 
-const VerifyOtpModal = ({ email, onSuccess, onClose }) => {
+const VerifyOtpModal = ({ email, formData, onSuccess, onClose }) => {
   const [otp, setOtp] = useState('');
 
   const { mutate, isPending } = useMutation({
@@ -19,8 +19,8 @@ const VerifyOtpModal = ({ email, onSuccess, onClose }) => {
         alert(data.message || 'Invalid OTP');
         return;
       }
-      onSuccess(); // Notify parent to proceed
-      onClose();   // Close modal
+      onSuccess(formData); // ✅ pass form data to register
+      onClose();           // close modal
     },
     onError: (error) => {
       console.error('OTP verification error:', error);
